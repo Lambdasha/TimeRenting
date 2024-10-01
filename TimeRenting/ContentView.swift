@@ -95,22 +95,153 @@ struct MessagesView: View {
 
 // Me View
 struct MeView: View {
+    @StateObject var authViewModel = AuthViewModel()
     var body: some View {
-        NavigationView {
-            VStack {
-                Text("Me Page")
-                    .font(.largeTitle)
+            NavigationView {
+                VStack {
+                    Image(systemName: "clock")
+                        .imageScale(.large)
+                        .foregroundStyle(.tint)
+                    Text("Rent your time")
+
+                    NavigationLink(destination: SignUpView(authViewModel: authViewModel)) {
+                        Text("Sign Up")
+                    }
                     .padding()
-                Image(systemName: "person.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
+
+                    NavigationLink(destination: LoginView(authViewModel: authViewModel)) {
+                        Text("Login")
+                    }
+                    .padding()
+                }
+                .padding()
             }
-            .navigationTitle("Me")
         }
+}
+
+struct User {
+    var username: String
+    var password: String
+    var email: String
+}
+
+
+class AuthViewModel: ObservableObject {
+    @Published var users: [User] = []
+    @Published var currentUser: User? = nil
+
+    func signUp(username: String, password: String, email: String) {
+        let newUser = User(username: username, password: password, email: email)
+        users.append(newUser)
+        currentUser = newUser // Automatically log in after sign-up
+    }
+
+    func login(username: String, password: String) -> Bool {
+        if let user = users.first(where: { $0.username == username && $0.password == password }) {
+            currentUser = user
+            return true
+        }
+        return false
+    }
+
+    func logout() {
+        currentUser = nil
     }
 }
 
+struct SignUpView: View {
+    @State private var username: String = ""
+    @State private var password: String = ""
+    @State private var email: String = ""
+    @ObservedObject var authViewModel: AuthViewModel
+
+    var body: some View {
+        VStack {
+            Text("Sign Up")
+                .font(.largeTitle)
+
+            TextField("Username", text: $username)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+
+            TextField("Email", text: $email)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+
+            SecureField("Password", text: $password)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+
+            Button("Sign Up") {
+                authViewModel.signUp(username: username, password: password, email: email)
+            }
+            .padding()
+
+            NavigationLink(destination: ProfileView(authViewModel: authViewModel)) {
+                Text("Go to Profile")
+            }
+        }
+        .padding()
+    }
+}
+
+struct LoginView: View {
+    @State private var username: String = ""
+    @State private var password: String = ""
+    @ObservedObject var authViewModel: AuthViewModel
+
+    var body: some View {
+        VStack {
+            Text("Login")
+                .font(.largeTitle)
+
+            TextField("Username", text: $username)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+
+            SecureField("Password", text: $password)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+
+            Button("Login") {
+                if authViewModel.login(username: username, password: password) {
+                    // Successfully logged in, navigate to ProfileView
+                }
+            }
+            .padding()
+
+            NavigationLink(destination: ProfileView(authViewModel: authViewModel)) {
+                Text("Go to Profile")
+            }
+        }
+        .padding()
+    }
+}
+
+struct ProfileView: View {
+    @ObservedObject var authViewModel: AuthViewModel
+
+    var body: some View {
+        VStack {
+            if let user = authViewModel.currentUser {
+                Text("Welcome, \(user.username)!")
+                    .font(.largeTitle)
+
+                Text("Email: \(user.email)")
+                    .padding()
+
+                Button("Logout") {
+                    authViewModel.logout()
+                }
+                .padding()
+            } else {
+                Text("No user logged in")
+                    .font(.title)
+            }
+        }
+        .padding()
+    }
+}
 
 #Preview {
     ContentView()
