@@ -177,6 +177,7 @@ struct SignUpView: View {
     @State private var password: String = ""
     @State private var email: String = ""
     @ObservedObject var authViewModel: AuthViewModel
+    @State private var isSignedUp: Bool = false // Track sign-up completion
 
     var body: some View {
         VStack {
@@ -197,11 +198,13 @@ struct SignUpView: View {
 
             Button("Sign Up") {
                 authViewModel.signUp(username: username, password: password, email: email)
+                isSignedUp = authViewModel.currentUser != nil // Update completion status based on user presence
             }
             .padding()
 
-            NavigationLink(destination: ProfileView(authViewModel: authViewModel)) {
-                Text("Go to Profile")
+            // Conditional NavigationLink based on isSignedUp status
+            NavigationLink(destination: ProfileView(authViewModel: authViewModel), isActive: $isSignedUp) {
+                EmptyView()
             }
         }
         .padding()
@@ -209,11 +212,12 @@ struct SignUpView: View {
     }
 }
 
-// Login View
 struct LoginView: View {
     @State private var username: String = ""
     @State private var password: String = ""
     @ObservedObject var authViewModel: AuthViewModel
+    @State private var isLoggedIn: Bool = false // Track login success
+    @State private var errorMessage: String? // Store error message
 
     var body: some View {
         VStack {
@@ -230,19 +234,32 @@ struct LoginView: View {
 
             Button("Login") {
                 if authViewModel.login(username: username, password: password) {
-                    // Successfully logged in, navigate to ProfileView
+                    isLoggedIn = true // Set to true on successful login
+                    errorMessage = nil // Clear any previous error message
+                } else {
+                    errorMessage = "Username and password do not match. Please try again."
                 }
             }
             .padding()
 
-            NavigationLink(destination: ProfileView(authViewModel: authViewModel)) {
-                Text("Go to Profile")
+            // Display error message if login fails
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+                    .padding(.top, 8)
+            }
+
+            // Conditional NavigationLink based on isLoggedIn status
+            NavigationLink(destination: ProfileView(authViewModel: authViewModel), isActive: $isLoggedIn) {
+                EmptyView()
             }
         }
         .padding()
         .navigationTitle("Login")
     }
 }
+
+
 
 // Profile View
 struct ProfileView: View {
