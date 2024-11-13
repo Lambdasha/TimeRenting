@@ -11,6 +11,7 @@ struct LoginView: View {
     @State private var username: String = ""
     @State private var password: String = ""
     @ObservedObject var authViewModel: AuthViewModel
+    @Binding var isPresented: Bool // Bind to the sheet presentation
     @State private var isLoggedIn: Bool = false // Track login success
     @State private var errorMessage: String? // Store error message
 
@@ -31,6 +32,7 @@ struct LoginView: View {
                 if authViewModel.login(username: username, password: password) {
                     isLoggedIn = true // Set to true on successful login
                     errorMessage = nil // Clear any previous error message
+                    isPresented = false // Dismiss the login view
                 } else {
                     errorMessage = "Username and password do not match. Please try again."
                 }
@@ -43,14 +45,10 @@ struct LoginView: View {
                     .foregroundColor(.red)
                     .padding(.top, 8)
             }
-
-            // Conditional NavigationLink based on isLoggedIn status
-            NavigationLink(destination: ProfileView(authViewModel: authViewModel), isActive: $isLoggedIn) {
-                EmptyView()
-            }
         }
         .padding()
         .navigationTitle("Login")
     }
 }
+
 

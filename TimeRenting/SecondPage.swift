@@ -5,9 +5,13 @@
 //  Created by Echo Targaryen on 10/29/24.
 //
 
-// Second Page (Destination Page)
+// SecondPage.swift
+// TimeRenting
+
 import SwiftUI
 struct SecondPage: View {
+    @StateObject var authViewModel = AuthViewModel()
+
     var body: some View {
         TabView {
             HomeView()
@@ -22,13 +26,14 @@ struct SecondPage: View {
                     Text("Messages")
                 }
             
-            MeView()
+            ProfileView(authViewModel: authViewModel) // Use ProfileView instead of MeView
                 .tabItem {
                     Image(systemName: "person.fill")
-                    Text("Me")
+                    Text("Profile")
                 }
         }
-        .navigationTitle("Second Page") // Title for the second page
+        .navigationTitle("Second Page")
     }
 }
+
 

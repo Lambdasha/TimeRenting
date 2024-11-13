@@ -5,11 +5,17 @@
 //  Created by Echo Targaryen on 9/17/24.
 //
 
+
+// ContentView.swift
+// TimeRenting
+
 import SwiftUI
 import CoreData
 
 // First Page (Main Page)
 struct ContentView: View {
+    @StateObject private var authViewModel = AuthViewModel() // Create authViewModel here
+
     var body: some View {
         NavigationView { // Main NavigationView
             VStack {
@@ -20,8 +26,8 @@ struct ContentView: View {
                 Text("Rent your time")
                     .font(.largeTitle)
                 
-                // NavigationLink to go to the second page
-                NavigationLink(destination: SecondPage()) {
+                // NavigationLink to go to the second page, passing authViewModel
+                NavigationLink(destination: SecondPage(authViewModel: authViewModel)) {
                     Text("Get started")
                         .foregroundColor(.blue)
                         .padding()
@@ -33,8 +39,7 @@ struct ContentView: View {
     }
 }
 
-
-
 #Preview {
     ContentView()
 }
+

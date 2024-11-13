@@ -9,13 +9,14 @@ import Foundation
 
 import CoreData
 
+
 struct PersistenceController {
     static let shared = PersistenceController()
 
     let container: NSPersistentContainer
 
     init(inMemory: Bool = false) {
-        container = NSPersistentContainer(name: "TimeRentingDataModel")
+        container = NSPersistentContainer(name: "TimeRentingDataModel") // Make sure this name matches your .xcdatamodeld file
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         }
@@ -26,4 +27,5 @@ struct PersistenceController {
         }
     }
 }
+
 

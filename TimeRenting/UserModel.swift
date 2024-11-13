@@ -8,47 +8,41 @@
 
 // User Model
 
+
 import SwiftUI
 import CoreData
-struct UserModel {
-    var username: String
-    var password: String
-    var email: String
-}
 
 class AuthViewModel: ObservableObject {
-    @Published var currentUser: UserModel? // Change this to UserModel
+    @Published var currentUser: User? // Use Core Data's User entity directly
     
     // Access the Core Data context
     let context = PersistenceController.shared.container.viewContext
     
     func signUp(username: String, password: String, email: String) {
-        let newUser = User(context: context) // Assuming UserEntity is your Core Data model
+        // Create and save a new User entity
+        let newUser = User(context: context)
         newUser.username = username
         newUser.password = password
         newUser.email = email
         
         do {
             try context.save()
-            currentUser = UserModel(username: username, password: password, email: email) // Update this line
+            currentUser = newUser // Assign the Core Data User entity directly
         } catch {
             print("Failed to save user: \(error)")
         }
     }
     
     func login(username: String, password: String) -> Bool {
+        // Create a fetch request to find the user with the given username and password
         let request: NSFetchRequest<User> = User.fetchRequest()
         request.predicate = NSPredicate(format: "username == %@ AND password == %@", username, password)
 
         do {
             let users = try context.fetch(request)
             if let user = users.first {
-                if let username = user.username, let password = user.password, let email = user.email {
-                    currentUser = UserModel(username: username, password: password, email: email)
-                    return true
-                } else {
-                    print("User information is incomplete.")
-                }
+                currentUser = user // Assign the fetched User entity directly
+                return true
             }
         } catch {
             print("Failed to fetch user: \(error)")
@@ -57,7 +51,8 @@ class AuthViewModel: ObservableObject {
     }
     
     func logout() {
-        currentUser = nil
+        currentUser = nil // Clear the current user
     }
 }
+
 

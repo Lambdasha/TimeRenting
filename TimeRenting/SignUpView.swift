@@ -4,7 +4,6 @@
 //
 //  Created by Echo Targaryen on 10/29/24.
 //
-
 import SwiftUI
 
 // Sign Up View
@@ -13,7 +12,7 @@ struct SignUpView: View {
     @State private var password: String = ""
     @State private var email: String = ""
     @ObservedObject var authViewModel: AuthViewModel
-    @State private var isSignedUp: Bool = false // Track sign-up completion
+    @Binding var isPresented: Bool  // Bind the presentation state
 
     var body: some View {
         VStack {
@@ -34,16 +33,18 @@ struct SignUpView: View {
 
             Button("Sign Up") {
                 authViewModel.signUp(username: username, password: password, email: email)
-                isSignedUp = authViewModel.currentUser != nil // Update completion status based on user presence
+                isPresented = false // Close the sheet on successful sign-up
             }
             .padding()
 
-            // Conditional NavigationLink based on isSignedUp status
-            NavigationLink(destination: ProfileView(authViewModel: authViewModel), isActive: $isSignedUp) {
-                EmptyView()
+            Button("Cancel") {
+                isPresented = false // Close the sheet
             }
+            .padding()
         }
         .padding()
         .navigationTitle("Sign Up")
     }
 }
+
+
