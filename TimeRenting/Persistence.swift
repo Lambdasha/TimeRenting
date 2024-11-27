@@ -5,10 +5,9 @@
 //  Created by Echo Targaryen on 10/28/24.
 //
 
+
 import Foundation
-
 import CoreData
-
 
 struct PersistenceController {
     static let shared = PersistenceController()
@@ -26,6 +25,9 @@ struct PersistenceController {
             }
         }
     }
+
+    // Expose the context for use in the app
+    var viewContext: NSManagedObjectContext {
+        return container.viewContext
+    }
 }
-
-

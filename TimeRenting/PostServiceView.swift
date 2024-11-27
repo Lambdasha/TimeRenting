@@ -53,12 +53,14 @@ struct PostServiceView: View {
 
         do {
             try viewContext.save()
+            print("Service saved successfully.")
         } catch {
             // Handle error
             print("Error saving service: \(error.localizedDescription)")
         }
     }
 }
+
 
 
 
