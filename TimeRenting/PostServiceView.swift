@@ -5,7 +5,6 @@
 //  Created by Echo Targaryen on 11/11/24.
 //
 
-
 import SwiftUI
 import CoreData
 
@@ -45,11 +44,17 @@ struct PostServiceView: View {
     }
 
     private func postService() {
+        guard let currentUser = authViewModel.currentUser else {
+            print("Error: No user is currently logged in.")
+            return
+        }
+        
         let newService = Service(context: viewContext)
         newService.serviceTitle = serviceTitle
         newService.serviceDescription = serviceDescription
         newService.serviceLocation = serviceLocation
         newService.timestamp = Date()
+        newService.postedByUser = fetchUserEntity(username: currentUser.username ?? "")
 
         do {
             try viewContext.save()
@@ -57,6 +62,20 @@ struct PostServiceView: View {
         } catch {
             // Handle error
             print("Error saving service: \(error.localizedDescription)")
+        }
+    }
+
+    // Helper function to fetch the corresponding User entity from Core Data
+    private func fetchUserEntity(username: String) -> User? {
+        let request: NSFetchRequest<User> = User.fetchRequest()
+        request.predicate = NSPredicate(format: "username == %@", username)
+
+        do {
+            let users = try viewContext.fetch(request)
+            return users.first
+        } catch {
+            print("Failed to fetch user: \(error.localizedDescription)")
+            return nil
         }
     }
 }

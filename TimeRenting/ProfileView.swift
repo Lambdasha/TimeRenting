@@ -8,21 +8,20 @@ import SwiftUI
 import CoreData
 
 struct ProfileView: View {
-    @StateObject var authViewModel: AuthViewModel
-    @State private var isPostServicePresented = false
-    @State private var isLoginPresented = false
-    @State private var isSignUpPresented = false
+    @StateObject var authViewModel: AuthViewModel // StateObject for managing the authentication state
+    @State private var isPostServicePresented = false // To control the presentation of the post service view
+    @State private var isLoginPresented = false // To control the presentation of the login view
+    @State private var isSignUpPresented = false // To control the presentation of the sign-up view
     @Environment(\.managedObjectContext) private var viewContext
-
-    // Fetch all bookings, we will filter based on the current user later
+    
     @FetchRequest(
         entity: Booking.entity(),
         sortDescriptors: [NSSortDescriptor(keyPath: \Booking.timestamp, ascending: false)]
-    ) private var bookings: FetchedResults<Booking>
+    ) private var bookings: FetchedResults<Booking> // Fetch all bookings
 
     var body: some View {
         VStack {
-            if let user = authViewModel.currentUser {
+            if let user = authViewModel.currentUser { // Check if the user is logged in
                 // Display profile information if the user is logged in
                 Text("Welcome, \(user.username ?? "Unknown")!")
                     .font(.largeTitle)
@@ -45,20 +44,18 @@ struct ProfileView: View {
                 .foregroundColor(.blue)
                 .background(Color.gray.opacity(0.2))
                 .cornerRadius(10)
-
+                
                 // Display booked services
                 Text("Your Booked Services")
                     .font(.headline)
                     .padding(.top, 20)
 
-                let userBookings = bookings.filter { $0.user?.username == user.username }
-                
-                if userBookings.isEmpty {
+                if bookings.isEmpty {
                     Text("No booked services available.")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 } else {
-                    List(userBookings) { booking in
+                    List(bookings.filter { $0.user?.username == user.username }) { booking in
                         VStack(alignment: .leading, spacing: 5) {
                             Text(booking.service?.serviceTitle ?? "Untitled Service")
                                 .font(.headline)
@@ -72,6 +69,30 @@ struct ProfileView: View {
                         .padding(.vertical, 5)
                     }
                 }
+                
+                // Display services posted by the user
+                Text("Your Posted Services")
+                    .font(.headline)
+                    .padding(.top, 20)
+                
+                if user.servicePosted?.allObjects.isEmpty ?? true {
+                    Text("No posted services available.")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                } else {
+                    List((user.servicePosted?.allObjects as? [Service]) ?? []) { service in
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(service.serviceTitle ?? "Untitled Service")
+                                .font(.headline)
+                            Text(service.serviceDescription ?? "No Description")
+                                .font(.subheadline)
+                            Text("Location: \(service.serviceLocation ?? "Unknown Location")")
+                                .font(.footnote)
+                        }
+                        .padding(.vertical, 5)
+                    }
+                }
+
             } else {
                 // Display message if the user is not logged in
                 Text("No user logged in")
