@@ -12,12 +12,9 @@ struct ProfileView: View {
     @State private var isPostServicePresented = false // To control the presentation of the post service view
     @State private var isLoginPresented = false // To control the presentation of the login view
     @State private var isSignUpPresented = false // To control the presentation of the sign-up view
+    @State private var isBookedServicesPresented = false // To control the presentation of the booked services view
+    @State private var isPostedServicesPresented = false // To control the presentation of the posted services view
     @Environment(\.managedObjectContext) private var viewContext
-    
-    @FetchRequest(
-        entity: Booking.entity(),
-        sortDescriptors: [NSSortDescriptor(keyPath: \Booking.timestamp, ascending: false)]
-    ) private var bookings: FetchedResults<Booking> // Fetch all bookings
 
     var body: some View {
         VStack {
@@ -44,54 +41,26 @@ struct ProfileView: View {
                 .foregroundColor(.blue)
                 .background(Color.gray.opacity(0.2))
                 .cornerRadius(10)
-                
-                // Display booked services
-                Text("Your Booked Services")
-                    .font(.headline)
-                    .padding(.top, 20)
 
-                if bookings.isEmpty {
-                    Text("No booked services available.")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                } else {
-                    List(bookings.filter { $0.user?.username == user.username }) { booking in
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(booking.service?.serviceTitle ?? "Untitled Service")
-                                .font(.headline)
-                            Text(booking.service?.serviceDescription ?? "No Description")
-                                .font(.subheadline)
-                            Text("Location: \(booking.service?.serviceLocation ?? "Unknown Location")")
-                                .font(.footnote)
-                            Text("Booking Date: \(booking.timestamp ?? Date(), formatter: dateFormatter)")
-                                .font(.footnote)
-                        }
-                        .padding(.vertical, 5)
-                    }
+                // Booked Services Button
+                Button("View Your Booked Services") {
+                    isBookedServicesPresented = true
                 }
-                
-                // Display services posted by the user
-                Text("Your Posted Services")
-                    .font(.headline)
-                    .padding(.top, 20)
-                
-                if user.servicePosted?.allObjects.isEmpty ?? true {
-                    Text("No posted services available.")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                } else {
-                    List((user.servicePosted?.allObjects as? [Service]) ?? []) { service in
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(service.serviceTitle ?? "Untitled Service")
-                                .font(.headline)
-                            Text(service.serviceDescription ?? "No Description")
-                                .font(.subheadline)
-                            Text("Location: \(service.serviceLocation ?? "Unknown Location")")
-                                .font(.footnote)
-                        }
-                        .padding(.vertical, 5)
-                    }
+                .padding()
+                .font(.title2)
+                .foregroundColor(.blue)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(10)
+
+                // Posted Services Button
+                Button("View Your Posted Services") {
+                    isPostedServicesPresented = true
                 }
+                .padding()
+                .font(.title2)
+                .foregroundColor(.blue)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(10)
 
             } else {
                 // Display message if the user is not logged in
@@ -131,6 +100,14 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $isSignUpPresented) {
             SignUpView(authViewModel: authViewModel, isPresented: $isSignUpPresented)
+        }
+        .sheet(isPresented: $isBookedServicesPresented) {
+            BookedServicesView(user: authViewModel.currentUser!)
+                .environment(\.managedObjectContext, viewContext)
+        }
+        .sheet(isPresented: $isPostedServicesPresented) {
+            PostedServicesView(user: authViewModel.currentUser!)
+                .environment(\.managedObjectContext, viewContext)
         }
     }
 }
