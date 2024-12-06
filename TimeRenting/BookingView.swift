@@ -4,11 +4,13 @@
 //
 //  Created by Echo Targaryen on 12/4/24.
 //
+
 import SwiftUI
 import CoreData
 
 struct BookingView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @ObservedObject var authViewModel: AuthViewModel
     let service: Service // Receive the selected service
 
     @State private var bookingConfirmed = false // Tracks if booking is confirmed
@@ -22,6 +24,7 @@ struct BookingView: View {
             Text("Service: \(service.serviceTitle ?? "Untitled Service")")
                 .font(.headline)
 
+            // Confirm Booking Button
             Button("Confirm Booking") {
                 createBooking()
                 bookingConfirmed = true
@@ -41,11 +44,20 @@ struct BookingView: View {
     }
 
     private func createBooking() {
+        // Create a new booking instance in Core Data
         let newBooking = Booking(context: viewContext)
-        newBooking.timestamp = Date()
-        newBooking.service = service // Associate with the selected service
-        newBooking.id = UUID() // Unique identifier for the user
 
+        // Set up booking details
+        newBooking.timestamp = Date()
+        newBooking.service = service // Associate booking with the selected service
+        newBooking.id = UUID() // Generate a unique identifier
+
+        // Associate the logged-in user with the booking
+        if let currentUser = authViewModel.currentUser {
+            newBooking.user = currentUser
+        }
+
+        // Attempt to save the booking to the context
         do {
             try viewContext.save()
             print("Booking saved successfully.")
@@ -54,5 +66,3 @@ struct BookingView: View {
         }
     }
 }
-
-

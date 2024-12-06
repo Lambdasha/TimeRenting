@@ -5,7 +5,7 @@
         <attribute name="status" optional="YES" attributeType="String"/>
         <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="service" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Service" inverseName="bookings" inverseEntity="Service"/>
-        <relationship name="user" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="bookings" inverseEntity="User"/>
+        <relationship name="user" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="bookingsMade" inverseEntity="User"/>
     </entity>
     <entity name="Service" representedClassName="Service" syncable="YES" codeGenerationType="class">
         <attribute name="serviceDescription" optional="YES" attributeType="String"/>
@@ -13,12 +13,13 @@
         <attribute name="serviceTitle" optional="YES" attributeType="String"/>
         <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="bookings" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Booking" inverseName="service" inverseEntity="Booking"/>
-        <relationship name="postedByUser" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User"/>
+        <relationship name="postedByUser" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="servicePosted" inverseEntity="User"/>
     </entity>
     <entity name="User" representedClassName="User" syncable="YES" codeGenerationType="class">
         <attribute name="email" optional="YES" attributeType="String"/>
         <attribute name="password" optional="YES" attributeType="String"/>
         <attribute name="username" optional="YES" attributeType="String"/>
-        <relationship name="bookings" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Booking" inverseName="user" inverseEntity="Booking"/>
+        <relationship name="bookingsMade" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Booking" inverseName="user" inverseEntity="Booking"/>
+        <relationship name="servicePosted" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Service" inverseName="postedByUser" inverseEntity="Service"/>
     </entity>
 </model>

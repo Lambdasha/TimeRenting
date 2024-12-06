@@ -3,7 +3,7 @@
 //  TimeRenting
 //
 //  Created by Echo Targaryen on 10/29/24.
-
+//
 
 import SwiftUI
 import CoreData
@@ -22,6 +22,7 @@ struct HomeView: View {
 
     @State private var selectedService: Service? // Tracks the selected service for booking
     @State private var isBookingViewPresented = false // Tracks if BookingView is shown
+    @ObservedObject var authViewModel: AuthViewModel // Include authViewModel to access user information
 
     var body: some View {
         NavigationView {
@@ -39,7 +40,7 @@ struct HomeView: View {
                                 .font(.subheadline)
                             Text("Location: \(service.serviceLocation ?? "Unknown Location")")
                                 .font(.footnote)
-                            
+
                             if isServiceBooked(service) {
                                 // If the service is booked, show "Already Booked"
                                 Text("Already Booked")
@@ -66,10 +67,11 @@ struct HomeView: View {
             .navigationTitle("Home")
             .sheet(isPresented: $isBookingViewPresented) {
                 if let selectedService = selectedService {
-                    BookingView(service: selectedService) // Pass the selected service to BookingView
-                        .environment(\.managedObjectContext, viewContext) // Ensure viewContext is passed
+                    BookingView(authViewModel: authViewModel, service: selectedService)
+                        .environment(\.managedObjectContext, viewContext)
                 }
             }
+
             .onAppear {
                 print("Fetched services count: \(services.count)") // Debugging line
             }
