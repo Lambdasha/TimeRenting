@@ -77,33 +77,6 @@ struct ProfileViewForUser: View {
             }
             .padding(.top, 10)
 
-            Divider()
-
-            // Bookings Section
-            VStack(alignment: .leading) {
-                Text("Bookings Made")
-                    .font(.headline)
-                    .padding(.bottom, 5)
-
-                if userBookings.isEmpty {
-                    Text("No bookings made by this user.")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                } else {
-                    List(userBookings) { booking in
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("Service: \(booking.service?.serviceTitle ?? "Unknown Service")")
-                                .font(.headline)
-                            Text("Booked On: \(booking.timestamp ?? Date(), formatter: dateFormatter)")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                }
-            }
-            .padding(.top, 10)
-
-            Spacer()
         }
         .padding()
         .navigationTitle("User Profile")
