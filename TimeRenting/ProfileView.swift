@@ -128,8 +128,10 @@ struct ProfileView: View {
                 .environment(\.managedObjectContext, viewContext)
         }
         .sheet(isPresented: $isPostedServicesPresented) {
-            PostedServicesView(user: currentUser!)
-                .environment(\.managedObjectContext, viewContext)
+            if let currentUser = currentUser {
+                PostedServicesView(user: currentUser, authViewModel: authViewModel) // Pass authViewModel
+                    .environment(\.managedObjectContext, viewContext)
+            }
         }
         .sheet(isPresented: $isCancellationRequestsPresented) {
             CancellationRequestsView(user: currentUser!)
