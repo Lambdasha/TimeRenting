@@ -13,6 +13,8 @@ struct ProfileViewForUser: View {
     @ObservedObject var authViewModel: AuthViewModel
     @State private var showConversationView = false
     @State private var showLoginAlert = false // To display an alert if the user is not logged in
+    @State private var navigateToBookingView = false // Tracks navigation to BookingView
+    @State private var selectedService: Service? // Tracks the selected service
 
     // Fetch services posted by the user
     @FetchRequest var postedServices: FetchedResults<Service>
@@ -39,71 +41,88 @@ struct ProfileViewForUser: View {
     }
 
     var body: some View {
-        VStack {
-            // User Details Section
+        NavigationStack {
             VStack {
-                Text("Profile")
-                    .font(.largeTitle)
-                    .padding()
+                // User Details Section
+                VStack {
+                    Text("Profile")
+                        .font(.largeTitle)
+                        .padding()
 
-                Text("Username: \(user.username ?? "Unknown")")
-                    .font(.headline)
+                    Text("Username: \(user.username ?? "Unknown")")
+                        .font(.headline)
 
-                Text("Email: \(user.email ?? "No email provided")")
-                    .font(.subheadline)
-                    .padding()
-            }
-
-            Divider()
-
-            // Posted Services Section
-            VStack(alignment: .leading) {
-                Text("Services Posted")
-                    .font(.headline)
-                    .padding(.bottom, 5)
-
-                if postedServices.isEmpty {
-                    Text("No services posted by this user.")
+                    Text("Email: \(user.email ?? "No email provided")")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
-                } else {
-                    List(postedServices) { service in
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(service.serviceTitle ?? "Untitled Service")
-                                .font(.headline)
-                            Text(service.serviceDescription ?? "No Description")
-                                .font(.subheadline)
-                            Text("Location: \(service.serviceLocation ?? "Unknown Location")")
-                                .font(.footnote)
+                        .padding()
+                }
+
+                Divider()
+
+                // Posted Services Section
+                VStack(alignment: .leading) {
+                    Text("Services Posted")
+                        .font(.headline)
+                        .padding(.bottom, 5)
+
+                    if postedServices.isEmpty {
+                        Text("No services posted by this user.")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    } else {
+                        List(postedServices) { service in
+                            Button(action: {
+                                selectedService = service
+                                navigateToBookingView = true
+                            }) {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(service.serviceTitle ?? "Untitled Service")
+                                        .font(.headline)
+                                    Text(service.serviceDescription ?? "No Description")
+                                        .font(.subheadline)
+                                    Text("Location: \(service.serviceLocation ?? "Unknown Location")")
+                                        .font(.footnote)
+                                }
+                                .padding()
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(8)
+                            }
+                            .buttonStyle(BorderlessButtonStyle()) // Limit the button's click range
                         }
                     }
                 }
-            }
-            .padding(.top, 10)
+                .padding(.top, 10)
 
-            // Send Message Button
-            Button("Send Message") {
-                if authViewModel.currentUser != nil {
-                    showConversationView = true
-                } else {
-                    showLoginAlert = true
+                // Send Message Button
+                Button("Send Message") {
+                    if authViewModel.currentUser != nil {
+                        showConversationView = true
+                    } else {
+                        showLoginAlert = true
+                    }
                 }
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+
+                Spacer()
             }
             .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-
-            Spacer()
-        }
-        .padding()
-        .navigationTitle("User Profile")
-        .alert("Please log in to send a message.", isPresented: $showLoginAlert) {
-            Button("OK", role: .cancel) {}
-        }
-        .navigationDestination(isPresented: $showConversationView) {
-            if let loggedInUser = authViewModel.currentUser {
-                ConversationView(receiver: user, authViewModel: authViewModel)
+            .navigationTitle("User Profile")
+            .alert("Please log in to send a message.", isPresented: $showLoginAlert) {
+                Button("OK", role: .cancel) {}
+            }
+            .navigationDestination(isPresented: $showConversationView) {
+                if let loggedInUser = authViewModel.currentUser {
+                    ConversationView(receiver: user, authViewModel: authViewModel)
+                }
+            }
+            .navigationDestination(isPresented: $navigateToBookingView) {
+                if let selectedService = selectedService {
+                    BookingView(authViewModel: authViewModel, service: selectedService)
+                        .environment(\.managedObjectContext, viewContext)
+                }
             }
         }
     }

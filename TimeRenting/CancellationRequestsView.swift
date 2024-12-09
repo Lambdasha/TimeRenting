@@ -50,9 +50,9 @@ struct CancellationRequestsView: View {
                                 Text("Approve")
                                     .font(.subheadline)
                                     .padding(8)
-                                    .background(Color.green.opacity(0.2))
+                                    .background(Color.blue.opacity(0.2))
                                     .cornerRadius(5)
-                                    .foregroundColor(.green)
+                                    .foregroundColor(.blue)
                             }
                             .buttonStyle(BorderlessButtonStyle()) // Limit click region
 
@@ -93,6 +93,13 @@ struct CancellationRequestsView: View {
         // Disassociate the service from the booking to mark it as canceled
         booking.service = nil
 
+        // Send a message to notify the subscriber of the approval
+        sendMessage(
+            from: user,
+            to: bookedUser,
+            content: "Your cancellation request for the service '\(service.serviceTitle ?? "Unknown Service")' has been approved."
+        )
+
         do {
             try viewContext.save()
             print("Cancellation approved. Time credits updated.")
@@ -102,15 +109,42 @@ struct CancellationRequestsView: View {
     }
 
     private func handleRejection(for booking: Booking) {
+        guard let bookedUser = booking.user, let service = booking.service else {
+            print("Error: Missing service or user.")
+            return
+        }
+
         // Reject the cancellation
         booking.cancellationApproved = false
         booking.cancellationRequested = false
+
+        // Send a message to notify the subscriber of the rejection
+        sendMessage(
+            from: user,
+            to: bookedUser,
+            content: "Your cancellation request for the service '\(service.serviceTitle ?? "Unknown Service")' has been rejected."
+        )
 
         do {
             try viewContext.save()
             print("Cancellation rejected.")
         } catch {
             print("Error rejecting cancellation: \(error.localizedDescription)")
+        }
+    }
+
+    private func sendMessage(from sender: User, to receiver: User, content: String) {
+        let newMessage = Message(context: viewContext)
+        newMessage.content = content
+        newMessage.timestamp = Date()
+        newMessage.sender = sender
+        newMessage.receiver = receiver
+
+        do {
+            try viewContext.save()
+            print("Message sent: \(content)")
+        } catch {
+            print("Error sending message: \(error.localizedDescription)")
         }
     }
 }

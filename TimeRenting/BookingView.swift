@@ -13,9 +13,10 @@ struct BookingView: View {
     let service: Service
 
     @State private var bookingConfirmed = false
-    @State private var notEnoughCredits = false // Tracks if the user lacks sufficient time credits
-    @State private var navigateToProfile: Bool = false // Tracks navigation to ProfileViewForUser
-    @State private var selectedProvider: User? // Tracks the selected service provider
+    @State private var notEnoughCredits = false
+    @State private var navigateToProfile = false
+    @State private var selectedProvider: User?
+    @State private var currentUser: User?
 
     var body: some View {
         NavigationStack {
@@ -42,7 +43,7 @@ struct BookingView: View {
                     .cornerRadius(10)
                 }
 
-                if let currentUser = fetchCoreDataUser() {
+                if let currentUser = currentUser {
                     if bookingConfirmed {
                         Text("Booking confirmed for \(service.serviceTitle ?? "this service")!")
                             .font(.subheadline)
@@ -68,7 +69,11 @@ struct BookingView: View {
             .navigationDestination(isPresented: $navigateToProfile) {
                 if let provider = selectedProvider {
                     ProfileViewForUser(user: provider, authViewModel: authViewModel)
+                        .environment(\.managedObjectContext, viewContext)
                 }
+            }
+            .onAppear {
+                currentUser = fetchCoreDataUser()
             }
         }
     }
@@ -122,26 +127,14 @@ struct BookingView: View {
         do {
             let existingMessages = try viewContext.fetch(fetchRequest)
 
-            if existingMessages.isEmpty {
-                let initialMessage = Message(context: viewContext)
-                initialMessage.content = "Hi \(provider.username ?? "Provider"), I have just booked your service: '\(service.serviceTitle ?? "Untitled Service")'."
-                initialMessage.timestamp = Date()
-                initialMessage.sender = subscriber
-                initialMessage.receiver = provider
+            let newMessage = Message(context: viewContext)
+            newMessage.content = "Hi \(provider.username ?? "Provider"), I have just booked your service: '\(service.serviceTitle ?? "Untitled Service")'."
+            newMessage.timestamp = Date()
+            newMessage.sender = subscriber
+            newMessage.receiver = provider
 
-                try viewContext.save()
-                print("Conversation and initial message created successfully.")
-            } else {
-                // Add a new message to an existing conversation
-                let newMessage = Message(context: viewContext)
-                newMessage.content = "Hi \(provider.username ?? "Provider"), I have just booked your service: '\(service.serviceTitle ?? "Untitled Service")'."
-                newMessage.timestamp = Date()
-                newMessage.sender = subscriber
-                newMessage.receiver = provider
-
-                try viewContext.save()
-                print("New message added to existing conversation successfully.")
-            }
+            try viewContext.save()
+            print(existingMessages.isEmpty ? "Conversation created with initial message." : "New message added to existing conversation.")
         } catch {
             print("Error creating conversation or sending message: \(error.localizedDescription)")
         }
@@ -163,3 +156,4 @@ struct BookingView: View {
         }
     }
 }
+
