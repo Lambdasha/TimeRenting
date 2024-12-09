@@ -86,6 +86,9 @@ struct BookingView: View {
         user.timeCredits -= requiredCredits
         createBooking(for: user)
 
+        // Create a conversation and send a confirmation message
+        createConversationAndSendMessage(to: service.postedByUser, from: user)
+
         // Update flags
         bookingConfirmed = true
         notEnoughCredits = false
@@ -102,6 +105,45 @@ struct BookingView: View {
             print("Booking saved successfully.")
         } catch {
             print("Error saving booking: \(error.localizedDescription)")
+        }
+    }
+
+    private func createConversationAndSendMessage(to provider: User?, from subscriber: User) {
+        guard let provider = provider else {
+            print("Error: Service provider not found.")
+            return
+        }
+
+        // Fetch or create a conversation between the subscriber and provider
+        let fetchRequest: NSFetchRequest<Message> = Message.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "(sender == %@ AND receiver == %@) OR (sender == %@ AND receiver == %@)",
+                                             subscriber, provider, provider, subscriber)
+
+        do {
+            let existingMessages = try viewContext.fetch(fetchRequest)
+
+            if existingMessages.isEmpty {
+                let initialMessage = Message(context: viewContext)
+                initialMessage.content = "Hi \(provider.username ?? "Provider"), I have just booked your service: '\(service.serviceTitle ?? "Untitled Service")'."
+                initialMessage.timestamp = Date()
+                initialMessage.sender = subscriber
+                initialMessage.receiver = provider
+
+                try viewContext.save()
+                print("Conversation and initial message created successfully.")
+            } else {
+                // Add a new message to an existing conversation
+                let newMessage = Message(context: viewContext)
+                newMessage.content = "Hi \(provider.username ?? "Provider"), I have just booked your service: '\(service.serviceTitle ?? "Untitled Service")'."
+                newMessage.timestamp = Date()
+                newMessage.sender = subscriber
+                newMessage.receiver = provider
+
+                try viewContext.save()
+                print("New message added to existing conversation successfully.")
+            }
+        } catch {
+            print("Error creating conversation or sending message: \(error.localizedDescription)")
         }
     }
 

@@ -49,11 +49,19 @@ struct BookedServicesView: View {
                                 .font(.footnote)
 
                             if booking.cancellationRequested == false {
-                                Button(action: {
-                                    requestCancellation(for: booking)
-                                }) {
-                                    Text("Request Cancellation")
-                                        .foregroundColor(.blue)
+                                HStack {
+                                    Spacer() // Ensure the button stays in its space
+                                    Button(action: {
+                                        requestCancellation(for: booking)
+                                    }) {
+                                        Text("Request Cancellation")
+                                            .font(.subheadline)
+                                            .padding(8)
+                                            .background(Color.blue.opacity(0.2))
+                                            .cornerRadius(5)
+                                            .foregroundColor(.blue)
+                                    }
+                                    .buttonStyle(BorderlessButtonStyle()) // Limit button click range
                                 }
                             }
                         }

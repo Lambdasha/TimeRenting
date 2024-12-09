@@ -12,6 +12,7 @@
     <entity name="Message" representedClassName="Message" syncable="YES" codeGenerationType="class">
         <attribute name="content" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isRead" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="receiver" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="receivedMessages" inverseEntity="User"/>
         <relationship name="sender" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="sentMessages" inverseEntity="User"/>

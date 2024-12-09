@@ -14,6 +14,7 @@ struct PostedServicesView: View {
     @State private var showingDeleteConfirmation = false
     @State private var serviceToDelete: Service?
     @State private var cannotDeleteMessage: String?
+    @State private var userToMessage: User? // Tracks the user who booked the service
     @State private var navigateToProfile: Bool = false
     @State private var navigateToEditService: Bool = false
     @State private var serviceToEdit: Service?
@@ -24,7 +25,6 @@ struct PostedServicesView: View {
         self.user = user
         self.authViewModel = authViewModel
 
-        // FetchRequest to dynamically fetch services posted by the user
         _services = FetchRequest(
             entity: Service.entity(),
             sortDescriptors: [NSSortDescriptor(keyPath: \Service.timestamp, ascending: false)],
@@ -93,6 +93,11 @@ struct PostedServicesView: View {
                 set: { if !$0 { cannotDeleteMessage = nil } }
             )) {
                 Button("OK", role: .cancel) {}
+                if let userToMessage = userToMessage {
+                    Button("View Profile") {
+                        navigateToProfile = true
+                    }
+                }
             } message: {
                 Text(cannotDeleteMessage ?? "")
             }
@@ -114,12 +119,18 @@ struct PostedServicesView: View {
                         .environment(\.managedObjectContext, viewContext)
                 }
             }
+            .navigationDestination(isPresented: $navigateToProfile) {
+                if let userToMessage = userToMessage {
+                    ProfileViewForUser(user: userToMessage, authViewModel: authViewModel)
+                }
+            }
         }
     }
 
     private func handleEdit(service: Service) {
-        if let _ = getBookedUser(for: service) {
+        if let bookedUser = getBookedUser(for: service) {
             cannotDeleteMessage = "This service cannot be edited because it has already been booked."
+            userToMessage = bookedUser
         } else {
             serviceToEdit = service
             navigateToEditService = true
@@ -127,8 +138,9 @@ struct PostedServicesView: View {
     }
 
     private func handleDelete(service: Service) {
-        if let _ = getBookedUser(for: service) {
+        if let bookedUser = getBookedUser(for: service) {
             cannotDeleteMessage = "This service cannot be deleted because it has already been booked."
+            userToMessage = bookedUser
         } else {
             serviceToDelete = service
             showingDeleteConfirmation = true

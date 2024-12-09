@@ -17,7 +17,6 @@ struct ConversationView: View {
 
     var body: some View {
         VStack {
-            // Header displaying recipient username
             HStack {
                 Text("Chat with:")
                     .font(.headline)
@@ -26,7 +25,7 @@ struct ConversationView: View {
                     .bold()
             }
             .padding()
-            
+
             Divider()
 
             ScrollViewReader { scrollProxy in
@@ -50,7 +49,7 @@ struct ConversationView: View {
                                 }
                             }
                             .padding(.horizontal)
-                            .id(message) // Assign an ID to each message for scrolling
+                            .id(message)
                         }
                     }
                 }
@@ -65,12 +64,12 @@ struct ConversationView: View {
                     if let lastMessage = messages.last {
                         scrollProxy.scrollTo(lastMessage, anchor: .bottom)
                     }
+                    markMessagesAsRead()
                 }
             }
 
             Divider()
 
-            // New Message Input
             HStack {
                 TextField("Enter your message", text: $messageContent)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -124,13 +123,26 @@ struct ConversationView: View {
         newMessage.timestamp = Date()
         newMessage.sender = sender
         newMessage.receiver = receiver
+        newMessage.isRead = false // New messages are unread by default
 
         do {
             try viewContext.save()
             messageContent = "" // Clear input
-            fetchMessages() // Refresh messages after sending
+            fetchMessages()
         } catch {
             print("Error saving message: \(error.localizedDescription)")
+        }
+    }
+
+    private func markMessagesAsRead() {
+        for message in messages where message.receiver?.username == authViewModel.currentUser?.username && !(message.isRead ?? true) {
+            message.isRead = true
+        }
+
+        do {
+            try viewContext.save()
+        } catch {
+            print("Error marking messages as read: \(error.localizedDescription)")
         }
     }
 

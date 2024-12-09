@@ -43,21 +43,33 @@ struct CancellationRequestsView: View {
                             .font(.footnote)
 
                         HStack {
-                            Button("Approve") {
+                            // Approve Button
+                            Button(action: {
                                 handleApproval(for: booking)
+                            }) {
+                                Text("Approve")
+                                    .font(.subheadline)
+                                    .padding(8)
+                                    .background(Color.green.opacity(0.2))
+                                    .cornerRadius(5)
+                                    .foregroundColor(.green)
                             }
-                            .padding()
-                            .background(Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
+                            .buttonStyle(BorderlessButtonStyle()) // Limit click region
 
-                            Button("Reject") {
+                            Spacer()
+
+                            // Reject Button
+                            Button(action: {
                                 handleRejection(for: booking)
+                            }) {
+                                Text("Reject")
+                                    .font(.subheadline)
+                                    .padding(8)
+                                    .background(Color.red.opacity(0.2))
+                                    .cornerRadius(5)
+                                    .foregroundColor(.red)
                             }
-                            .padding()
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
+                            .buttonStyle(BorderlessButtonStyle()) // Limit click region
                         }
                     }
                     .padding(.vertical, 5)
