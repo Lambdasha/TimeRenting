@@ -3,7 +3,6 @@
 //  TimeRenting
 //
 //  Created by Echo Targaryen on 10/29/24.
-
 import SwiftUI
 import CoreData
 
@@ -14,6 +13,7 @@ struct ProfileView: View {
     @State private var isSignUpPresented = false // To control the presentation of the sign-up view
     @State private var isBookedServicesPresented = false // To control the presentation of the booked services view
     @State private var isPostedServicesPresented = false // To control the presentation of the posted services view
+    @State private var isCancellationRequestsPresented = false // To control the presentation of the cancellation requests view
     @Environment(\.managedObjectContext) private var viewContext
 
     var body: some View {
@@ -55,6 +55,16 @@ struct ProfileView: View {
                 // Posted Services Button
                 Button("View Your Posted Services") {
                     isPostedServicesPresented = true
+                }
+                .padding()
+                .font(.title2)
+                .foregroundColor(.blue)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(10)
+
+                // Cancellation Requests Button
+                Button("View Cancellation Requests") {
+                    isCancellationRequestsPresented = true
                 }
                 .padding()
                 .font(.title2)
@@ -107,6 +117,10 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $isPostedServicesPresented) {
             PostedServicesView(user: authViewModel.currentUser!)
+                .environment(\.managedObjectContext, viewContext)
+        }
+        .sheet(isPresented: $isCancellationRequestsPresented) {
+            CancellationRequestsView(user: authViewModel.currentUser!)
                 .environment(\.managedObjectContext, viewContext)
         }
     }
