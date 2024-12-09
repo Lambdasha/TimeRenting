@@ -10,14 +10,18 @@ import CoreData
 struct ProfileViewForUser: View {
     let user: User
     @Environment(\.managedObjectContext) private var viewContext
+    @ObservedObject var authViewModel: AuthViewModel
+    @State private var showConversationView = false
+    @State private var showLoginAlert = false // To display an alert if the user is not logged in
 
     // Fetch services posted by the user
     @FetchRequest var postedServices: FetchedResults<Service>
     // Fetch bookings made by the user
     @FetchRequest var userBookings: FetchedResults<Booking>
 
-    init(user: User) {
+    init(user: User, authViewModel: AuthViewModel) {
         self.user = user
+        self.authViewModel = authViewModel
 
         // FetchRequest for services posted by the user
         _postedServices = FetchRequest(
@@ -77,16 +81,30 @@ struct ProfileViewForUser: View {
             }
             .padding(.top, 10)
 
+            // Send Message Button
+            Button("Send Message") {
+                if authViewModel.currentUser != nil {
+                    showConversationView = true
+                } else {
+                    showLoginAlert = true
+                }
+            }
+            .padding()
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+
+            Spacer()
         }
         .padding()
         .navigationTitle("User Profile")
+        .alert("Please log in to send a message.", isPresented: $showLoginAlert) {
+            Button("OK", role: .cancel) {}
+        }
+        .navigationDestination(isPresented: $showConversationView) {
+            if let loggedInUser = authViewModel.currentUser {
+                ConversationView(receiver: user, authViewModel: authViewModel)
+            }
+        }
     }
 }
-
-// DateFormatter for formatting dates
-private let dateFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    formatter.timeStyle = .short
-    return formatter
-}()

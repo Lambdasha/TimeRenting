@@ -14,10 +14,21 @@ struct ConversationView: View {
 
     @State private var messageContent: String = ""
     @State private var messages: [Message] = [] // Local storage for messages
-    @State private var shouldScrollToLatest: Bool = false // Triggers scrolling
 
     var body: some View {
         VStack {
+            // Header displaying recipient username
+            HStack {
+                Text("Chat with:")
+                    .font(.headline)
+                Text(receiver.username ?? "Unknown")
+                    .font(.title)
+                    .bold()
+            }
+            .padding()
+            
+            Divider()
+
             ScrollViewReader { scrollProxy in
                 ScrollView {
                     LazyVStack(alignment: .leading) {
@@ -73,7 +84,7 @@ struct ConversationView: View {
             }
             .padding()
         }
-        .navigationTitle("Chat with \(receiver.username ?? "Unknown")")
+        .navigationTitle("Conversation")
         .onAppear {
             fetchMessages()
         }

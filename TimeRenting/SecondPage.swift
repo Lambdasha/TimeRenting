@@ -29,6 +29,5 @@ struct SecondPage: View {
                     Text("Profile")
                 }
         }
-        .navigationTitle("Second Page")
     }
 }

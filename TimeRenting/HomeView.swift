@@ -4,7 +4,6 @@
 //
 //  Created by Echo Targaryen on 10/29/24.
 //
-
 import SwiftUI
 import CoreData
 
@@ -23,6 +22,7 @@ struct HomeView: View {
     @State private var selectedService: Service? // Tracks the selected service for booking
     @State private var isBookingViewPresented = false // Tracks if BookingView is shown
     @State private var isSearchViewPresented = false // Tracks if SearchView is shown
+    @State private var navigateToProfile = false // Tracks navigation to ProfileView
     @ObservedObject var authViewModel: AuthViewModel // Include authViewModel to access user information
 
     var body: some View {
@@ -65,16 +65,29 @@ struct HomeView: View {
                                     .font(.footnote)
                                     .foregroundColor(.red)
                             } else {
-                                // If the service is not booked, show "Book Now" button
-                                Button(action: {
-                                    selectedService = service // Set the selected service
-                                    isBookingViewPresented = true // Trigger BookingView presentation
-                                }) {
-                                    Text("Book Now")
+                                // If the service is not booked, show appropriate button
+                                if authViewModel.currentUser == nil {
+                                    NavigationLink(
+                                        destination: ProfileView(authViewModel: authViewModel),
+                                        isActive: $navigateToProfile
+                                    ) {
+                                        Button("Log in to book") {
+                                            navigateToProfile = true
+                                        }
                                         .padding()
-                                        .background(Color.blue)
+                                        .background(Color.gray)
                                         .foregroundColor(.white)
                                         .cornerRadius(8)
+                                    }
+                                } else {
+                                    Button("Book Now") {
+                                        selectedService = service // Set the selected service
+                                        isBookingViewPresented = true // Trigger BookingView presentation
+                                    }
+                                    .padding()
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
                                 }
                             }
                         }

@@ -69,7 +69,8 @@ struct SearchView: View {
             }
             .navigationTitle("Search")
             .navigationDestination(for: User.self) { user in
-                ProfileViewForUser(user: user)
+                ProfileViewForUser(user: user, authViewModel: authViewModel)
+                    .environment(\.managedObjectContext, viewContext)
             }
             .navigationDestination(for: Service.self) { service in
                 BookingView(authViewModel: authViewModel, service: service)

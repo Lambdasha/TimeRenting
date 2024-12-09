@@ -23,13 +23,19 @@ struct BookingView: View {
             Text("Service: \(service.serviceTitle ?? "Untitled Service")")
                 .font(.headline)
 
-            Button("Confirm Booking") {
-                createBooking()
+            if authViewModel.currentUser == nil {
+                Text("Please login to book this service.")
+                    .foregroundColor(.red)
+            } else {
+                Button("Confirm Booking") {
+                    createBooking()
+                }
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .disabled(authViewModel.currentUser == nil) // Disable if not logged in
             }
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
 
             if bookingConfirmed {
                 Text("Booking confirmed for \(service.serviceTitle ?? "this service")!")
@@ -41,17 +47,17 @@ struct BookingView: View {
     }
 
     private func createBooking() {
+        // Ensure user is logged in
+        guard let coreDataUser = fetchCoreDataUser() else {
+            print("Error: Logged-in user not found in Core Data.")
+            return
+        }
+
         // Create a new booking instance
         let newBooking = Booking(context: viewContext)
         newBooking.timestamp = Date()
         newBooking.service = service // Associate the booking with the service
         newBooking.id = UUID()
-
-        // Fetch the current logged-in Core Data user
-        guard let coreDataUser = fetchCoreDataUser() else {
-            print("Error: Logged-in user not found in Core Data.")
-            return
-        }
         newBooking.user = coreDataUser
 
         // Attempt to save the booking
@@ -59,9 +65,6 @@ struct BookingView: View {
             try viewContext.save()
             print("Booking saved successfully.")
             bookingConfirmed = true
-
-            // Create and display the conversation
-            createAndDisplayConversation(for: coreDataUser, with: service.postedByUser)
         } catch {
             print("Error saving booking: \(error.localizedDescription)")
         }
@@ -81,36 +84,6 @@ struct BookingView: View {
         } catch {
             print("Error fetching Core Data user: \(error.localizedDescription)")
             return nil
-        }
-    }
-
-    private func createAndDisplayConversation(for user: User, with provider: User?) {
-        guard let provider = provider else {
-            print("Error: Service provider not found.")
-            return
-        }
-
-        let fetchRequest: NSFetchRequest<Message> = Message.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "(sender == %@ AND receiver == %@) OR (sender == %@ AND receiver == %@)",
-                                             user, provider, provider, user)
-
-        do {
-            let existingMessages = try viewContext.fetch(fetchRequest)
-
-            if existingMessages.isEmpty {
-                let welcomeMessage = Message(context: viewContext)
-                welcomeMessage.content = "Welcome to your conversation!"
-                welcomeMessage.timestamp = Date()
-                welcomeMessage.sender = provider
-                welcomeMessage.receiver = user
-
-                try viewContext.save()
-                print("Conversation created successfully.")
-            } else {
-                print("Conversation already exists.")
-            }
-        } catch {
-            print("Error creating conversation: \(error.localizedDescription)")
         }
     }
 }

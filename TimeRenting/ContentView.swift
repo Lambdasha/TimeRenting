@@ -10,14 +10,13 @@
 // TimeRenting
 
 import SwiftUI
-import CoreData
 
-// First Page (Main Page)
 struct ContentView: View {
     @StateObject private var authViewModel = AuthViewModel() // Create authViewModel here
+    @State private var navigateToSecondPage = false // State to control navigation
 
     var body: some View {
-        NavigationView { // Main NavigationView
+        NavigationStack { // Use NavigationStack instead of NavigationView
             VStack {
                 Image(systemName: "clock")
                     .resizable()
@@ -25,16 +24,27 @@ struct ContentView: View {
                     .frame(width: 100, height: 100)
                 Text("Rent your time")
                     .font(.largeTitle)
-                
-                // NavigationLink to go to the second page, passing authViewModel
-                NavigationLink(destination: SecondPage(authViewModel: authViewModel)) {
-                    Text("Get started")
-                        .foregroundColor(.blue)
-                        .padding()
-                        .cornerRadius(10)
+
+                // Trigger navigation automatically
+                if navigateToSecondPage {
+                    NavigationLink(value: "SecondPage") {
+                        EmptyView() // Invisible NavigationLink
+                    }
                 }
             }
             .padding()
+            .onAppear {
+                // Navigate to the second page after 2 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    navigateToSecondPage = true
+                }
+            }
+            .navigationDestination(for: String.self) { value in
+                if value == "SecondPage" {
+                    SecondPage(authViewModel: authViewModel)
+                        .navigationBarBackButtonHidden(true) // Hide the back button
+                }
+            }
         }
     }
 }
