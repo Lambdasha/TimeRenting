@@ -7,6 +7,13 @@
         <relationship name="service" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Service" inverseName="bookings" inverseEntity="Service"/>
         <relationship name="user" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="bookingsMade" inverseEntity="User"/>
     </entity>
+    <entity name="Message" representedClassName="Message" syncable="YES" codeGenerationType="class">
+        <attribute name="content" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="receiver" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="receivedMessages" inverseEntity="User"/>
+        <relationship name="sender" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="sentMessages" inverseEntity="User"/>
+    </entity>
     <entity name="Service" representedClassName="Service" syncable="YES" codeGenerationType="class">
         <attribute name="serviceDescription" optional="YES" attributeType="String"/>
         <attribute name="serviceLocation" optional="YES" attributeType="String"/>
@@ -20,6 +27,8 @@
         <attribute name="password" optional="YES" attributeType="String"/>
         <attribute name="username" optional="YES" attributeType="String"/>
         <relationship name="bookingsMade" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Booking" inverseName="user" inverseEntity="Booking"/>
+        <relationship name="receivedMessages" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Message" inverseName="receiver" inverseEntity="Message"/>
+        <relationship name="sentMessages" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Message" inverseName="sender" inverseEntity="Message"/>
         <relationship name="servicePosted" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Service" inverseName="postedByUser" inverseEntity="Service"/>
     </entity>
 </model>

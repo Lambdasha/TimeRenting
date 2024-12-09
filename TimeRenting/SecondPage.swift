@@ -3,13 +3,6 @@
 //  TimeRenting
 //
 //  Created by Echo Targaryen on 10/29/24.
-//
-//
-//  SecondPage.swift
-//  TimeRenting
-//
-//  Created by Echo Targaryen on 10/29/24.
-//
 
 import SwiftUI
 
@@ -24,7 +17,7 @@ struct SecondPage: View {
                     Text("Home")
                 }
             
-            MessagesView() // Assuming MessagesView does not require authViewModel
+            MessagesView(authViewModel: authViewModel) // Assuming MessagesView does not require authViewModel
                 .tabItem {
                     Image(systemName: "message.fill")
                     Text("Messages")
