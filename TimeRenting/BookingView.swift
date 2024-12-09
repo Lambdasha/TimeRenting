@@ -4,16 +4,15 @@
 //
 //  Created by Echo Targaryen on 12/4/24.
 //
-
 import SwiftUI
 import CoreData
 
 struct BookingView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @ObservedObject var authViewModel: AuthViewModel
-    let service: Service // Receive the selected service
+    let service: Service // The service being booked
 
-    @State private var bookingConfirmed = false // Tracks if booking is confirmed
+    @State private var bookingConfirmed = false // Tracks booking confirmation
 
     var body: some View {
         VStack(spacing: 20) {
@@ -24,10 +23,8 @@ struct BookingView: View {
             Text("Service: \(service.serviceTitle ?? "Untitled Service")")
                 .font(.headline)
 
-            // Confirm Booking Button
             Button("Confirm Booking") {
                 createBooking()
-                bookingConfirmed = true
             }
             .padding()
             .background(Color.blue)
@@ -44,26 +41,27 @@ struct BookingView: View {
     }
 
     private func createBooking() {
-        // Create a new booking instance in Core Data
+        // Create a new booking instance
         let newBooking = Booking(context: viewContext)
-
-        // Set up booking details
         newBooking.timestamp = Date()
-        newBooking.service = service // Associate booking with the selected service
-        newBooking.id = UUID() // Generate a unique identifier
+        newBooking.service = service // Associate the booking with the service
+        newBooking.id = UUID()
 
         // Fetch the current logged-in Core Data user
-        if let coreDataUser = fetchCoreDataUser() {
-            newBooking.user = coreDataUser
-        } else {
+        guard let coreDataUser = fetchCoreDataUser() else {
             print("Error: Logged-in user not found in Core Data.")
             return
         }
+        newBooking.user = coreDataUser
 
-        // Attempt to save the booking to the context
+        // Attempt to save the booking
         do {
             try viewContext.save()
             print("Booking saved successfully.")
+            bookingConfirmed = true
+
+            // Create and display the conversation
+            createAndDisplayConversation(for: coreDataUser, with: service.postedByUser)
         } catch {
             print("Error saving booking: \(error.localizedDescription)")
         }
@@ -79,11 +77,40 @@ struct BookingView: View {
         fetchRequest.predicate = NSPredicate(format: "username == %@", currentUserModel.username ?? "")
 
         do {
-            let results = try viewContext.fetch(fetchRequest)
-            return results.first
+            return try viewContext.fetch(fetchRequest).first
         } catch {
             print("Error fetching Core Data user: \(error.localizedDescription)")
             return nil
+        }
+    }
+
+    private func createAndDisplayConversation(for user: User, with provider: User?) {
+        guard let provider = provider else {
+            print("Error: Service provider not found.")
+            return
+        }
+
+        let fetchRequest: NSFetchRequest<Message> = Message.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "(sender == %@ AND receiver == %@) OR (sender == %@ AND receiver == %@)",
+                                             user, provider, provider, user)
+
+        do {
+            let existingMessages = try viewContext.fetch(fetchRequest)
+
+            if existingMessages.isEmpty {
+                let welcomeMessage = Message(context: viewContext)
+                welcomeMessage.content = "Welcome to your conversation!"
+                welcomeMessage.timestamp = Date()
+                welcomeMessage.sender = provider
+                welcomeMessage.receiver = user
+
+                try viewContext.save()
+                print("Conversation created successfully.")
+            } else {
+                print("Conversation already exists.")
+            }
+        } catch {
+            print("Error creating conversation: \(error.localizedDescription)")
         }
     }
 }
