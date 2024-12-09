@@ -14,42 +14,63 @@ struct BookingView: View {
 
     @State private var bookingConfirmed = false
     @State private var notEnoughCredits = false // Tracks if the user lacks sufficient time credits
+    @State private var navigateToProfile: Bool = false // Tracks navigation to ProfileViewForUser
+    @State private var selectedProvider: User? // Tracks the selected service provider
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Book Service")
-                .font(.title)
-                .padding()
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("Book Service")
+                    .font(.title)
+                    .padding()
 
-            Text("Service: \(service.serviceTitle ?? "Untitled Service")")
-                .font(.headline)
+                Text("Service: \(service.serviceTitle ?? "Untitled Service")")
+                    .font(.headline)
 
-            Text("Required Time Credits: \(service.requiredTimeCredits)")
-                .font(.subheadline)
+                Text("Required Time Credits: \(service.requiredTimeCredits)")
+                    .font(.subheadline)
 
-            if let currentUser = fetchCoreDataUser() {
-                if bookingConfirmed {
-                    Text("Booking confirmed for \(service.serviceTitle ?? "this service")!")
-                        .font(.subheadline)
-                        .foregroundColor(.green)
-                } else if notEnoughCredits {
-                    Text("Not enough time credits.")
-                        .foregroundColor(.red)
-                } else {
-                    Button("Confirm Booking") {
-                        handleBooking(for: currentUser)
+                // Button to navigate to Service Provider's Profile
+                if let serviceProvider = service.postedByUser {
+                    Button("View Service Provider Profile") {
+                        selectedProvider = serviceProvider
+                        navigateToProfile = true
                     }
                     .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
+                    .background(Color.gray.opacity(0.2))
+                    .foregroundColor(.blue)
                     .cornerRadius(10)
                 }
-            } else {
-                Text("Please login to book this service.")
-                    .foregroundColor(.red)
+
+                if let currentUser = fetchCoreDataUser() {
+                    if bookingConfirmed {
+                        Text("Booking confirmed for \(service.serviceTitle ?? "this service")!")
+                            .font(.subheadline)
+                            .foregroundColor(.green)
+                    } else if notEnoughCredits {
+                        Text("Not enough time credits.")
+                            .foregroundColor(.red)
+                    } else {
+                        Button("Confirm Booking") {
+                            handleBooking(for: currentUser)
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                } else {
+                    Text("Please login to book this service.")
+                        .foregroundColor(.red)
+                }
+            }
+            .padding()
+            .navigationDestination(isPresented: $navigateToProfile) {
+                if let provider = selectedProvider {
+                    ProfileViewForUser(user: provider, authViewModel: authViewModel)
+                }
             }
         }
-        .padding()
     }
 
     private func handleBooking(for user: User) {

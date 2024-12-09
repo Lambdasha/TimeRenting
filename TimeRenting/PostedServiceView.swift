@@ -9,13 +9,28 @@ import SwiftUI
 
 struct PostedServicesView: View {
     let user: User
-    @ObservedObject var authViewModel: AuthViewModel // Pass authViewModel as a parameter
+    @ObservedObject var authViewModel: AuthViewModel
     @Environment(\.managedObjectContext) private var viewContext
     @State private var showingDeleteConfirmation = false
     @State private var serviceToDelete: Service?
     @State private var cannotDeleteMessage: String?
-    @State private var userToMessage: User?
-    @State private var navigateToProfile: Bool = false // State for navigation to ProfileViewForUser
+    @State private var navigateToProfile: Bool = false
+    @State private var navigateToEditService: Bool = false
+    @State private var serviceToEdit: Service?
+
+    @FetchRequest private var services: FetchedResults<Service>
+
+    init(user: User, authViewModel: AuthViewModel) {
+        self.user = user
+        self.authViewModel = authViewModel
+
+        // FetchRequest to dynamically fetch services posted by the user
+        _services = FetchRequest(
+            entity: Service.entity(),
+            sortDescriptors: [NSSortDescriptor(keyPath: \Service.timestamp, ascending: false)],
+            predicate: NSPredicate(format: "postedByUser == %@", user)
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -24,13 +39,13 @@ struct PostedServicesView: View {
                     .font(.largeTitle)
                     .padding()
 
-                if user.servicePosted?.allObjects.isEmpty ?? true {
+                if services.isEmpty {
                     Text("No posted services available.")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 } else {
-                    List((user.servicePosted?.allObjects as? [Service]) ?? [], id: \.self) { service in
-                        VStack(alignment: .leading, spacing: 5) {
+                    List(services, id: \.self) { service in
+                        VStack(alignment: .leading, spacing: 10) {
                             Text(service.serviceTitle ?? "Untitled Service")
                                 .font(.headline)
                             Text(service.serviceDescription ?? "No Description")
@@ -38,18 +53,34 @@ struct PostedServicesView: View {
                             Text("Location: \(service.serviceLocation ?? "Unknown Location")")
                                 .font(.footnote)
 
-                            // Delete Button
-                            Button(action: {
-                                if let bookedUser = getBookedUser(for: service) {
-                                    userToMessage = bookedUser
-                                    cannotDeleteMessage = "This service cannot be deleted because it has already been booked."
-                                } else {
-                                    serviceToDelete = service
-                                    showingDeleteConfirmation = true
+                            HStack {
+                                // Edit Button
+                                Button(action: {
+                                    handleEdit(service: service)
+                                }) {
+                                    Text("Edit")
+                                        .font(.subheadline)
+                                        .padding(8)
+                                        .background(Color.blue.opacity(0.2))
+                                        .cornerRadius(5)
+                                        .foregroundColor(.blue)
                                 }
-                            }) {
-                                Text("Delete")
-                                    .foregroundColor(.red)
+                                .buttonStyle(BorderlessButtonStyle())
+
+                                Spacer()
+
+                                // Delete Button
+                                Button(action: {
+                                    handleDelete(service: service)
+                                }) {
+                                    Text("Delete")
+                                        .font(.subheadline)
+                                        .padding(8)
+                                        .background(Color.red.opacity(0.2))
+                                        .cornerRadius(5)
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(BorderlessButtonStyle())
                             }
                         }
                         .padding(.vertical, 5)
@@ -57,16 +88,11 @@ struct PostedServicesView: View {
                 }
             }
             .padding()
-            .alert("Cannot Delete Service", isPresented: Binding<Bool>(
+            .alert("Cannot Modify Service", isPresented: Binding<Bool>(
                 get: { cannotDeleteMessage != nil },
                 set: { if !$0 { cannotDeleteMessage = nil } }
             )) {
                 Button("OK", role: .cancel) {}
-                if userToMessage != nil {
-                    Button("View Profile") {
-                        navigateToProfile = true // Trigger navigation
-                    }
-                }
             } message: {
                 Text(cannotDeleteMessage ?? "")
             }
@@ -82,29 +108,46 @@ struct PostedServicesView: View {
                     secondaryButton: .cancel()
                 )
             }
-            .navigationDestination(isPresented: $navigateToProfile) {
-                if let userToMessage = userToMessage {
-                    ProfileViewForUser(user: userToMessage, authViewModel: authViewModel)
+            .navigationDestination(isPresented: $navigateToEditService) {
+                if let serviceToEdit = serviceToEdit {
+                    EditServiceView(service: serviceToEdit)
+                        .environment(\.managedObjectContext, viewContext)
                 }
             }
         }
     }
 
-    // Function to check if a service is already booked
+    private func handleEdit(service: Service) {
+        if let _ = getBookedUser(for: service) {
+            cannotDeleteMessage = "This service cannot be edited because it has already been booked."
+        } else {
+            serviceToEdit = service
+            navigateToEditService = true
+        }
+    }
+
+    private func handleDelete(service: Service) {
+        if let _ = getBookedUser(for: service) {
+            cannotDeleteMessage = "This service cannot be deleted because it has already been booked."
+        } else {
+            serviceToDelete = service
+            showingDeleteConfirmation = true
+        }
+    }
+
     private func getBookedUser(for service: Service) -> User? {
         let fetchRequest: NSFetchRequest<Booking> = Booking.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "service == %@", service)
 
         do {
             let bookings = try viewContext.fetch(fetchRequest)
-            return bookings.first?.user // Return the first user who booked the service
+            return bookings.first?.user
         } catch {
             print("Error checking service bookings: \(error.localizedDescription)")
             return nil
         }
     }
 
-    // Function to delete a service
     private func deleteService(_ service: Service) {
         viewContext.delete(service)
         do {
