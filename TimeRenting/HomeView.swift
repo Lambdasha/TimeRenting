@@ -22,11 +22,29 @@ struct HomeView: View {
 
     @State private var selectedService: Service? // Tracks the selected service for booking
     @State private var isBookingViewPresented = false // Tracks if BookingView is shown
+    @State private var isSearchViewPresented = false // Tracks if SearchView is shown
     @ObservedObject var authViewModel: AuthViewModel // Include authViewModel to access user information
 
     var body: some View {
         NavigationView {
             VStack {
+                // Add a Search Button
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        isSearchViewPresented = true // Show the search view
+                    }) {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                            Text("Search")
+                        }
+                        .padding()
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(10)
+                    }
+                    .padding()
+                }
+
                 if services.isEmpty {
                     Text("No services available.")
                         .font(.subheadline)
@@ -71,7 +89,10 @@ struct HomeView: View {
                         .environment(\.managedObjectContext, viewContext)
                 }
             }
-
+            .sheet(isPresented: $isSearchViewPresented) {
+                SearchView(authViewModel: authViewModel)
+                    .environment(\.managedObjectContext, viewContext)
+            }
             .onAppear {
                 print("Fetched services count: \(services.count)") // Debugging line
             }

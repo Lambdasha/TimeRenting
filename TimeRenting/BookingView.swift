@@ -52,9 +52,12 @@ struct BookingView: View {
         newBooking.service = service // Associate booking with the selected service
         newBooking.id = UUID() // Generate a unique identifier
 
-        // Associate the logged-in user with the booking
-        if let currentUser = authViewModel.currentUser {
-            newBooking.user = currentUser
+        // Fetch the current logged-in Core Data user
+        if let coreDataUser = fetchCoreDataUser() {
+            newBooking.user = coreDataUser
+        } else {
+            print("Error: Logged-in user not found in Core Data.")
+            return
         }
 
         // Attempt to save the booking to the context
@@ -63,6 +66,24 @@ struct BookingView: View {
             print("Booking saved successfully.")
         } catch {
             print("Error saving booking: \(error.localizedDescription)")
+        }
+    }
+
+    private func fetchCoreDataUser() -> User? {
+        guard let currentUserModel = authViewModel.currentUser else {
+            print("No logged-in user found in AuthViewModel.")
+            return nil
+        }
+
+        let fetchRequest: NSFetchRequest<User> = User.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "username == %@", currentUserModel.username ?? "")
+
+        do {
+            let results = try viewContext.fetch(fetchRequest)
+            return results.first
+        } catch {
+            print("Error fetching Core Data user: \(error.localizedDescription)")
+            return nil
         }
     }
 }
