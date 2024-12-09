@@ -10,9 +10,10 @@ import CoreData
 struct BookingView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @ObservedObject var authViewModel: AuthViewModel
-    let service: Service // The service being booked
+    let service: Service
 
-    @State private var bookingConfirmed = false // Tracks booking confirmation
+    @State private var bookingConfirmed = false
+    @State private var notEnoughCredits = false // Tracks if the user lacks sufficient time credits
 
     var body: some View {
         VStack(spacing: 20) {
@@ -23,48 +24,61 @@ struct BookingView: View {
             Text("Service: \(service.serviceTitle ?? "Untitled Service")")
                 .font(.headline)
 
-            if authViewModel.currentUser == nil {
+            Text("Required Time Credits: \(service.requiredTimeCredits)")
+                .font(.subheadline)
+
+            if let currentUser = fetchCoreDataUser() {
+                if bookingConfirmed {
+                    Text("Booking confirmed for \(service.serviceTitle ?? "this service")!")
+                        .font(.subheadline)
+                        .foregroundColor(.green)
+                } else if notEnoughCredits {
+                    Text("Not enough time credits.")
+                        .foregroundColor(.red)
+                } else {
+                    Button("Confirm Booking") {
+                        handleBooking(for: currentUser)
+                    }
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+            } else {
                 Text("Please login to book this service.")
                     .foregroundColor(.red)
-            } else {
-                Button("Confirm Booking") {
-                    createBooking()
-                }
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-                .disabled(authViewModel.currentUser == nil) // Disable if not logged in
-            }
-
-            if bookingConfirmed {
-                Text("Booking confirmed for \(service.serviceTitle ?? "this service")!")
-                    .font(.subheadline)
-                    .foregroundColor(.green)
             }
         }
         .padding()
     }
 
-    private func createBooking() {
-        // Ensure user is logged in
-        guard let coreDataUser = fetchCoreDataUser() else {
-            print("Error: Logged-in user not found in Core Data.")
+    private func handleBooking(for user: User) {
+        let requiredCredits = service.requiredTimeCredits
+
+        guard user.timeCredits >= requiredCredits else {
+            notEnoughCredits = true
+            bookingConfirmed = false
             return
         }
 
-        // Create a new booking instance
+        // Deduct time credits and create booking
+        user.timeCredits -= requiredCredits
+        createBooking(for: user)
+
+        // Update flags
+        bookingConfirmed = true
+        notEnoughCredits = false
+    }
+
+    private func createBooking(for user: User) {
         let newBooking = Booking(context: viewContext)
         newBooking.timestamp = Date()
-        newBooking.service = service // Associate the booking with the service
-        newBooking.id = UUID()
-        newBooking.user = coreDataUser
+        newBooking.service = service
+        newBooking.user = user
 
-        // Attempt to save the booking
         do {
             try viewContext.save()
             print("Booking saved successfully.")
-            bookingConfirmed = true
         } catch {
             print("Error saving booking: \(error.localizedDescription)")
         }
@@ -72,7 +86,6 @@ struct BookingView: View {
 
     private func fetchCoreDataUser() -> User? {
         guard let currentUserModel = authViewModel.currentUser else {
-            print("No logged-in user found in AuthViewModel.")
             return nil
         }
 

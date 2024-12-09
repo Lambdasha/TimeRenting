@@ -68,13 +68,22 @@ struct CancellationRequestsView: View {
     }
 
     private func handleApproval(for booking: Booking) {
-        booking.cancellationApproved = true // Mark the cancellation as approved
+        guard let service = booking.service, let bookedUser = booking.user else {
+            print("Error: Missing service or user.")
+            return
+        }
+
+        // Increment the time credits of the user who booked the service
+        bookedUser.timeCredits += service.requiredTimeCredits
+        booking.cancellationApproved = true
         booking.cancellationRequested = false
-        booking.service = nil // Disassociate the service from the booking
+
+        // Disassociate the service from the booking to mark it as canceled
+        booking.service = nil
 
         do {
             try viewContext.save()
-            print("Cancellation approved and service disassociated.")
+            print("Cancellation approved. Time credits updated.")
         } catch {
             print("Error approving cancellation: \(error.localizedDescription)")
         }

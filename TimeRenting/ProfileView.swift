@@ -4,7 +4,6 @@
 //
 //  Created by Echo Targaryen on 10/29/24.
 // ProfileView.swift
-
 import SwiftUI
 import CoreData
 
@@ -18,13 +17,61 @@ struct ProfileView: View {
     @State private var isCancellationRequestsPresented = false
     @Environment(\.managedObjectContext) private var viewContext
 
+    @FetchRequest private var currentUserFetchRequest: FetchedResults<User>
+    private var currentUser: User? {
+        currentUserFetchRequest.first
+    }
+
+    init(authViewModel: AuthViewModel) {
+        _authViewModel = StateObject(wrappedValue: authViewModel)
+
+        // Set up the FetchRequest
+        if let currentUserModel = authViewModel.currentUser {
+            _currentUserFetchRequest = FetchRequest(
+                entity: User.entity(),
+                sortDescriptors: [],
+                predicate: NSPredicate(format: "username == %@", currentUserModel.username ?? "")
+            )
+        } else {
+            _currentUserFetchRequest = FetchRequest(entity: User.entity(), sortDescriptors: [])
+        }
+    }
+
     var body: some View {
         VStack {
-            if let user = authViewModel.currentUser { // Check if the user is logged in
+            if authViewModel.currentUser == nil || currentUser == nil {
+                // No user logged in
+                Text("No user logged in")
+                    .font(.title)
+                    .padding()
+
+                Button("Sign Up") {
+                    isSignUpPresented = true
+                }
+                .padding()
+                .foregroundColor(.blue)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(10)
+
+                Button("Login") {
+                    isLoginPresented = true
+                }
+                .padding()
+                .foregroundColor(.blue)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(10)
+            } else if let user = currentUser {
+                // Display user profile
                 Text("Welcome, \(user.username ?? "Unknown")!")
                     .font(.largeTitle)
 
                 Text("Email: \(user.email ?? "No email provided")")
+                    .padding()
+
+                // Display time credits with live updates
+                Text("Time Credits: \(user.timeCredits)")
+                    .font(.headline)
+                    .foregroundColor(.blue)
                     .padding()
 
                 Button("Logout") {
@@ -63,26 +110,6 @@ struct ProfileView: View {
                 .foregroundColor(.blue)
                 .background(Color.gray.opacity(0.2))
                 .cornerRadius(10)
-            } else {
-                Text("No user logged in")
-                    .font(.title)
-                    .padding()
-
-                Button("Sign Up") {
-                    isSignUpPresented = true
-                }
-                .padding()
-                .foregroundColor(.blue)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(10)
-
-                Button("Login") {
-                    isLoginPresented = true
-                }
-                .padding()
-                .foregroundColor(.blue)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(10)
             }
         }
         .padding()
@@ -101,11 +128,11 @@ struct ProfileView: View {
                 .environment(\.managedObjectContext, viewContext)
         }
         .sheet(isPresented: $isPostedServicesPresented) {
-            PostedServicesView(user: authViewModel.currentUser!)
+            PostedServicesView(user: currentUser!)
                 .environment(\.managedObjectContext, viewContext)
         }
         .sheet(isPresented: $isCancellationRequestsPresented) {
-            CancellationRequestsView(user: authViewModel.currentUser!)
+            CancellationRequestsView(user: currentUser!)
                 .environment(\.managedObjectContext, viewContext)
         }
     }
