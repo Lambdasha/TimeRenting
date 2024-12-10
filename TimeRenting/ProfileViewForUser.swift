@@ -93,7 +93,7 @@ struct ProfileViewForUser: View {
                 }
 
                 // Button to view posted services
-                NavigationLink(destination: UsersPostedServicesView(user: user)) {
+                NavigationLink(destination: UsersPostedServicesView(user: user, authViewModel: authViewModel)) {
                     Text("View Posted Services")
                         .padding()
                         .foregroundColor(.blue)

@@ -22,9 +22,6 @@ struct ReviewsView: View {
                         .foregroundColor(.gray)
                         .padding(.top, 20) // Add some top padding
                 } else {
-                    Text("Reviews:")
-                        .font(.title2)
-                        .padding(.top)
 
                     ForEach(reviews, id: \.objectID) { review in
                         VStack(alignment: .leading, spacing: 5) { // Add spacing within each review
@@ -48,6 +45,7 @@ struct ReviewsView: View {
         .onAppear {
             fetchReviewsForUser()
         }
+        .navigationTitle("\(user.username ?? "User")'s reviews")
     }
 
     private func fetchReviewsForUser() {

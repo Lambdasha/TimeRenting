@@ -10,11 +10,14 @@ import CoreData
 struct UsersPostedServicesView: View {
     var user: User
     @Environment(\.managedObjectContext) private var viewContext
+    @ObservedObject var authViewModel: AuthViewModel // Added authViewModel as a required parameter
+    @State private var selectedService: Service? // Tracks the selected service for navigation
 
     @FetchRequest var postedServices: FetchedResults<Service>
 
-    init(user: User) {
+    init(user: User, authViewModel: AuthViewModel) {
         self.user = user
+        self.authViewModel = authViewModel
 
         // FetchRequest for services posted by the user
         _postedServices = FetchRequest(
@@ -25,36 +28,46 @@ struct UsersPostedServicesView: View {
     }
 
     var body: some View {
-        ScrollView { // Add ScrollView for better layout
-            VStack(alignment: .leading, spacing: 10) { // Add spacing between items
-                if postedServices.isEmpty {
-                    Text("No services posted by this user.")
-                        .font(.headline)
-                        .foregroundColor(.gray)
-                        .padding(.top, 20) // Add some top padding
-                } else {
-                    Text("\(user.username ?? "User")'s Posted Services")
-                        .font(.title2)
-                        .padding(.top)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    if postedServices.isEmpty {
+                        Text("No services posted by this user.")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                            .padding(.top, 20)
+                    } else {
 
-                    ForEach(postedServices) { service in
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(service.serviceTitle ?? "Untitled Service")
-                                .font(.headline)
-                            Text(service.serviceDescription ?? "No Description")
-                                .font(.subheadline)
-                            Text("Location: \(service.serviceLocation ?? "Unknown Location")")
-                                .font(.body)
-                                .foregroundColor(.gray)
-                            Divider()
+                        ForEach(postedServices, id: \.objectID) { service in
+                            NavigationLink(destination: BookingView(authViewModel: authViewModel, service: service)) { // Pass authViewModel
+                                ServiceCardView(service: service) // Extracted into a separate reusable view
+                            }
                         }
-                        .padding() // Add padding to each service card
-                        .background(Color.gray.opacity(0.1)) // Optional: Add background color for better contrast
-                        .cornerRadius(8) // Optional: Rounded corners
                     }
                 }
+                .padding()
             }
-            .padding() // Add padding around the entire content
+            .navigationTitle("\(user.username ?? "User")'s Posted Services")
         }
+    }
+}
+
+struct ServiceCardView: View {
+    let service: Service
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(service.serviceTitle ?? "Untitled Service")
+                .font(.headline)
+            Text(service.serviceDescription ?? "No Description")
+                .font(.subheadline)
+            Text("Location: \(service.serviceLocation ?? "Unknown Location")")
+                .font(.body)
+                .foregroundColor(.gray)
+            Divider()
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(8)
     }
 }
