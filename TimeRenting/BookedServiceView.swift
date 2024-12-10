@@ -17,11 +17,14 @@ struct BookedServicesView: View {
 
     @State private var navigateToProfile: Bool = false
     @State private var navigateToWriteReview: Bool = false
-    @State private var navigateToViewReview: Bool = false
-    @State private var selectedService: Service? // Tracks the selected service
-    @State private var selectedProvider: User? // Tracks the selected service provider
-    @State private var selectedFilter: BookingFilter = .all // State for filter option
-    @State private var refreshTrigger: Bool = false // Manual state to trigger view refresh
+    @State private var selectedService: Service?
+    @State private var selectedProvider: User?
+    @State private var selectedFilter: BookingFilter = .all // State for filter options
+    @State private var refreshTrigger: Bool = false // Trigger for dynamic updates
+    
+    // Alert state
+    @State private var showAlert = false
+    @State private var selectedBooking: Booking?
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -32,7 +35,7 @@ struct BookedServicesView: View {
 
     // Enum for filter options
     enum BookingFilter: String, CaseIterable {
-        case all = "All"
+        case all = "All Services"
         case unfinished = "Unfinished"
         case finished = "Finished"
     }
@@ -55,7 +58,7 @@ struct BookedServicesView: View {
                 .padding()
 
                 if let currentUser = fetchCurrentUser() {
-                    // Filter bookings based on selected filter and exclude "Untitled Service"
+                    // Apply filter
                     let filteredBookings = applyFilter(for: currentUser)
 
                     if filteredBookings.isEmpty {
@@ -65,19 +68,19 @@ struct BookedServicesView: View {
                     } else {
                         List {
                             ForEach(filteredBookings, id: \.objectID) { booking in
-                                if let title = booking.service?.serviceTitle, !title.isEmpty {
+                                if let service = booking.service {
                                     VStack(alignment: .leading, spacing: 5) {
-                                        Text(title)
+                                        Text(service.serviceTitle ?? "Untitled Service")
                                             .font(.headline)
-                                        Text(booking.service?.serviceDescription ?? "No Description")
+                                        Text(service.serviceDescription ?? "No Description")
                                             .font(.subheadline)
-                                        Text("Location: \(booking.service?.serviceLocation ?? "Unknown Location")")
+                                        Text("Location: \(service.serviceLocation ?? "Unknown Location")")
                                             .font(.footnote)
                                         Text("Booking Date: \(booking.timestamp ?? Date(), formatter: dateFormatter)")
                                             .font(.footnote)
 
                                         HStack {
-                                            if let provider = booking.service?.postedByUser {
+                                            if let provider = service.postedByUser {
                                                 Button("View Profile") {
                                                     selectedProvider = provider
                                                     navigateToProfile = true
@@ -93,35 +96,19 @@ struct BookedServicesView: View {
                                             Spacer()
 
                                             // Buttons based on service state
-                                            if isServiceFinished(booking: booking) {
-                                                if hasReview(for: booking) {
-                                                    Button(action: {
-                                                        selectedService = booking.service
-                                                        navigateToViewReview = true
-                                                    }) {
-                                                        Text("View Review")
-                                                            .font(.subheadline)
-                                                            .padding(8)
-                                                            .background(Color.purple.opacity(0.2))
-                                                            .cornerRadius(5)
-                                                            .foregroundColor(.purple)
-                                                    }
-                                                    .buttonStyle(BorderlessButtonStyle())
-                                                } else {
-                                                    Button(action: {
-                                                        selectedService = booking.service
-                                                        navigateToWriteReview = true
-                                                    }) {
-                                                        Text("Write Review")
-                                                            .font(.subheadline)
-                                                            .padding(8)
-                                                            .background(Color.green.opacity(0.2))
-                                                            .cornerRadius(5)
-                                                            .foregroundColor(.green)
-                                                    }
-                                                    .buttonStyle(BorderlessButtonStyle())
+                                            if selectedFilter == .unfinished {
+                                                Button(action: {
+                                                    requestCancellation(for: booking)
+                                                }) {
+                                                    Text("Request Cancellation")
+                                                        .font(.subheadline)
+                                                        .padding(8)
+                                                        .background(Color.red.opacity(0.2))
+                                                        .cornerRadius(5)
+                                                        .foregroundColor(.red)
                                                 }
-                                            } else {
+                                                .buttonStyle(BorderlessButtonStyle())
+
                                                 Button(action: {
                                                     markAsFinished(booking)
                                                 }) {
@@ -131,6 +118,21 @@ struct BookedServicesView: View {
                                                         .background(Color.orange.opacity(0.2))
                                                         .cornerRadius(5)
                                                         .foregroundColor(.orange)
+                                                }
+                                                .buttonStyle(BorderlessButtonStyle())
+                                            }
+
+                                            if selectedFilter == .finished {
+                                                Button(action: {
+                                                    selectedService = service
+                                                    navigateToWriteReview = true
+                                                }) {
+                                                    Text("Write Review")
+                                                        .font(.subheadline)
+                                                        .padding(8)
+                                                        .background(Color.green.opacity(0.2))
+                                                        .cornerRadius(5)
+                                                        .foregroundColor(.green)
                                                 }
                                                 .buttonStyle(BorderlessButtonStyle())
                                             }
@@ -147,7 +149,7 @@ struct BookedServicesView: View {
                 }
             }
             .padding()
-            .id(refreshTrigger) // Attach `refreshTrigger` to force re-render when updated
+            .id(refreshTrigger)
             .navigationDestination(isPresented: $navigateToProfile) {
                 if let provider = selectedProvider {
                     ProfileViewForUser(user: provider, authViewModel: authViewModel)
@@ -160,11 +162,12 @@ struct BookedServicesView: View {
                         .environment(\.managedObjectContext, viewContext)
                 }
             }
-            .navigationDestination(isPresented: $navigateToViewReview) {
-                if let service = selectedService {
-                    ViewReviewView(service: service)
-                        .environment(\.managedObjectContext, viewContext)
-                }
+            .alert(isPresented: $showAlert) { // Alert is shown here
+                Alert(
+                    title: Text("Cancellation Request Sent"),
+                    message: Text("Your cancellation request has been sent to the provider."),
+                    dismissButton: .default(Text("OK"))
+                )
             }
         }
     }
@@ -172,17 +175,17 @@ struct BookedServicesView: View {
     private func applyFilter(for currentUser: User) -> [Booking] {
         switch selectedFilter {
         case .all:
-            return bookings.filter { $0.user?.username == currentUser.username && $0.cancellationApproved == false }
+            return bookings.filter { $0.user?.username == currentUser.username && !$0.cancellationApproved }
         case .unfinished:
             return bookings.filter {
                 $0.user?.username == currentUser.username &&
-                $0.cancellationApproved == false &&
+                !$0.cancellationApproved &&
                 !isServiceFinished(booking: $0)
             }
         case .finished:
             return bookings.filter {
                 $0.user?.username == currentUser.username &&
-                $0.cancellationApproved == false &&
+                !$0.cancellationApproved &&
                 isServiceFinished(booking: $0)
             }
         }
@@ -192,15 +195,40 @@ struct BookedServicesView: View {
         return booking.service?.isFinished ?? false
     }
 
-    private func hasReview(for booking: Booking) -> Bool {
-        let fetchRequest: NSFetchRequest<Review> = Review.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "service == %@", booking.service ?? NSNull())
+    private func requestCancellation(for booking: Booking) {
+        booking.cancellationRequested = true
+        sendCancellationMessage(for: booking)
         do {
-            let reviews = try viewContext.fetch(fetchRequest)
-            return !reviews.isEmpty
+            try viewContext.save()
+            refreshTrigger.toggle()
+            selectedBooking = booking // Store the selected booking for the alert
+            showAlert = true // Show the alert
+            print("Cancellation requested successfully.")
         } catch {
-            print("Error fetching reviews: \(error.localizedDescription)")
-            return false
+            print("Error requesting cancellation: \(error.localizedDescription)")
+        }
+    }
+
+    private func sendCancellationMessage(for booking: Booking) {
+        guard let provider = booking.service?.postedByUser,
+              let subscriber = booking.user else {
+            print("Error: Missing provider or subscriber.")
+            return
+        }
+
+        let messageContent = "The subscriber '\(subscriber.username ?? "Unknown")' has requested a cancellation for the service '\(booking.service?.serviceTitle ?? "Unknown Service")'."
+
+        let newMessage = Message(context: viewContext)
+        newMessage.content = messageContent
+        newMessage.timestamp = Date()
+        newMessage.sender = subscriber
+        newMessage.receiver = provider
+
+        do {
+            try viewContext.save()
+            print("Cancellation message sent to provider.")
+        } catch {
+            print("Error sending cancellation message: \(error.localizedDescription)")
         }
     }
 
@@ -209,7 +237,7 @@ struct BookedServicesView: View {
         service.isFinished = true
         do {
             try viewContext.save()
-            refreshTrigger.toggle() // Update the trigger to refresh the view
+            refreshTrigger.toggle()
             print("Service marked as finished.")
         } catch {
             print("Error marking service as finished: \(error.localizedDescription)")

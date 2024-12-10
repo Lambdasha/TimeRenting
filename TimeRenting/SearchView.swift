@@ -12,8 +12,8 @@ struct SearchView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @State private var searchText: String = ""
-    @State private var selectedUser: User?
-    @State private var selectedService: Service?
+    @State private var selectedUser: User? = nil
+    @State private var selectedService: Service? = nil
     @State private var searchFilter: SearchFilter = .username // Default filter
 
     enum SearchFilter: String, CaseIterable {
@@ -44,7 +44,9 @@ struct SearchView: View {
                         if searchFilter == .username {
                             Section(header: Text("Users")) {
                                 ForEach(fetchUsers(searchText: searchText), id: \.self) { user in
-                                    NavigationLink(value: user) {
+                                    Button(action: {
+                                        selectedUser = user
+                                    }) {
                                         Text(user.username ?? "Unknown User")
                                             .font(.headline)
                                     }
@@ -53,7 +55,9 @@ struct SearchView: View {
                         } else {
                             Section(header: Text("Services")) {
                                 ForEach(fetchServices(searchText: searchText), id: \.self) { service in
-                                    NavigationLink(value: service) {
+                                    Button(action: {
+                                        selectedService = service
+                                    }) {
                                         VStack(alignment: .leading) {
                                             Text(service.serviceTitle ?? "Untitled Service")
                                                 .font(.headline)
@@ -68,12 +72,23 @@ struct SearchView: View {
                 }
             }
             .navigationTitle("Search")
-            .navigationDestination(for: User.self) { user in
-                ProfileViewForUser(user: user, authViewModel: authViewModel)
-                    .environment(\.managedObjectContext, viewContext)
+            .navigationDestination(isPresented: Binding(
+                get: { selectedUser != nil },
+                set: { if !$0 { selectedUser = nil } }
+            )) {
+                if let user = selectedUser {
+                    ProfileViewForUser(user: user, authViewModel: authViewModel)
+                        .environment(\.managedObjectContext, viewContext)
+                }
             }
-            .navigationDestination(for: Service.self) { service in
-                BookingView(authViewModel: authViewModel, service: service)
+            .navigationDestination(isPresented: Binding(
+                get: { selectedService != nil },
+                set: { if !$0 { selectedService = nil } }
+            )) {
+                if let service = selectedService {
+                    BookingView(authViewModel: authViewModel, service: service)
+                        .environment(\.managedObjectContext, viewContext)
+                }
             }
         }
     }

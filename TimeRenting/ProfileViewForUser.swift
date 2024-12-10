@@ -59,40 +59,6 @@ struct ProfileViewForUser: View {
 
                 Divider()
 
-                // Posted Services Section
-                VStack(alignment: .leading) {
-                    Text("Services Posted")
-                        .font(.headline)
-                        .padding(.bottom, 5)
-
-                    if postedServices.isEmpty {
-                        Text("No services posted by this user.")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    } else {
-                        List(postedServices) { service in
-                            Button(action: {
-                                selectedService = service
-                                navigateToBookingView = true
-                            }) {
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(service.serviceTitle ?? "Untitled Service")
-                                        .font(.headline)
-                                    Text(service.serviceDescription ?? "No Description")
-                                        .font(.subheadline)
-                                    Text("Location: \(service.serviceLocation ?? "Unknown Location")")
-                                        .font(.footnote)
-                                }
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(8)
-                            }
-                            .buttonStyle(BorderlessButtonStyle()) // Limit the button's click range
-                        }
-                    }
-                }
-                .padding(.top, 10)
-
                 // Send Message Button
                 Button("Send Message") {
                     if authViewModel.currentUser != nil {
@@ -105,6 +71,24 @@ struct ProfileViewForUser: View {
                 .background(Color.blue)
                 .foregroundColor(.white)
                 .cornerRadius(10)
+
+                // Button to view reviews sent to this user
+                NavigationLink(destination: ReviewsView(user: user)) {
+                    Text("View Reviews Sent to this user")
+                        .padding()
+                        .foregroundColor(.blue)
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(10)
+                }
+
+                // Button to view posted services
+                NavigationLink(destination: UsersPostedServicesView(user: user)) {
+                    Text("View Posted Services")
+                        .padding()
+                        .foregroundColor(.blue)
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(10)
+                }
 
                 Spacer()
             }

@@ -29,5 +29,6 @@ struct SecondPage: View {
                     Text("Profile")
                 }
         }
+        .navigationBarBackButtonHidden(true)  // This will still not work if SecondPage is inside a NavigationStack
     }
 }

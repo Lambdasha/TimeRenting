@@ -14,78 +14,88 @@ struct ConversationView: View {
 
     @State private var messageContent: String = ""
     @State private var messages: [Message] = [] // Local storage for messages
+    @State private var navigateToProfileView = false
 
     var body: some View {
-        VStack {
-            HStack {
-                Text("Chat with:")
-                    .font(.headline)
-                Text(receiver.username ?? "Unknown")
-                    .font(.title)
-                    .bold()
-            }
-            .padding()
-
-            Divider()
-
-            ScrollViewReader { scrollProxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading) {
-                        ForEach(messages, id: \.self) { message in
-                            HStack {
-                                if message.sender?.username == authViewModel.currentUser?.username {
-                                    Spacer()
-                                    Text(message.content ?? "")
-                                        .padding()
-                                        .background(Color.blue)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(10)
-                                } else {
-                                    Text(message.content ?? "")
-                                        .padding()
-                                        .background(Color.gray.opacity(0.2))
-                                        .cornerRadius(10)
-                                    Spacer()
-                                }
-                            }
-                            .padding(.horizontal)
-                            .id(message)
-                        }
+        NavigationStack { // Ensure we have a NavigationStack
+            VStack {
+                HStack {
+                    
+                    // Updated button for receiver's username
+                    Button(action: {
+                        navigateToProfileView = true
+                    }) {
+                        Text(receiver.username ?? "Unknown")
+                            .font(.title)
+                            .bold()
+                            .foregroundColor(.blue) // Button with blue color
                     }
-                }
-                .onChange(of: messages) { _ in
-                    if let lastMessage = messages.last {
-                        withAnimation {
-                            scrollProxy.scrollTo(lastMessage, anchor: .bottom)
-                        }
-                    }
-                }
-                .onAppear {
-                    if let lastMessage = messages.last {
-                        scrollProxy.scrollTo(lastMessage, anchor: .bottom)
-                    }
-                    markMessagesAsRead()
-                }
-            }
-
-            Divider()
-
-            HStack {
-                TextField("Enter your message", text: $messageContent)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                Button("Send") {
-                    sendMessage()
                 }
                 .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
+
+                Divider()
+
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading) {
+                            ForEach(messages, id: \.self) { message in
+                                HStack {
+                                    if message.sender?.username == authViewModel.currentUser?.username {
+                                        Spacer()
+                                        Text(message.content ?? "")
+                                            .padding()
+                                            .background(Color.blue)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(10)
+                                    } else {
+                                        Text(message.content ?? "")
+                                            .padding()
+                                            .background(Color.gray.opacity(0.2))
+                                            .cornerRadius(10)
+                                        Spacer()
+                                    }
+                                }
+                                .padding(.horizontal)
+                                .id(message)
+                            }
+                        }
+                    }
+                    .onChange(of: messages) { _ in
+                        if let lastMessage = messages.last {
+                            withAnimation {
+                                scrollProxy.scrollTo(lastMessage, anchor: .bottom)
+                            }
+                        }
+                    }
+                    .onAppear {
+                        if let lastMessage = messages.last {
+                            scrollProxy.scrollTo(lastMessage, anchor: .bottom)
+                        }
+                        markMessagesAsRead()
+                    }
+                }
+
+                Divider()
+
+                HStack {
+                    TextField("Enter your message", text: $messageContent)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    Button("Send") {
+                        sendMessage()
+                    }
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+                .padding()
             }
-            .padding()
-        }
-        .navigationTitle("Conversation")
-        .onAppear {
-            fetchMessages()
+            .onAppear {
+                fetchMessages()
+            }
+            .navigationDestination(isPresented: $navigateToProfileView) {
+                ProfileViewForUser(user: receiver, authViewModel: authViewModel)
+            }
         }
     }
 
