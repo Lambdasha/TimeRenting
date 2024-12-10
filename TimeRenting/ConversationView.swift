@@ -20,7 +20,6 @@ struct ConversationView: View {
         NavigationStack { // Ensure we have a NavigationStack
             VStack {
                 HStack {
-                    
                     // Updated button for receiver's username
                     Button(action: {
                         navigateToProfileView = true
@@ -56,22 +55,17 @@ struct ConversationView: View {
                                     }
                                 }
                                 .padding(.horizontal)
-                                .id(message)
-                            }
-                        }
-                    }
-                    .onChange(of: messages) { _ in
-                        if let lastMessage = messages.last {
-                            withAnimation {
-                                scrollProxy.scrollTo(lastMessage, anchor: .bottom)
+                                .id(message) // Assign each message an ID for scrolling
                             }
                         }
                     }
                     .onAppear {
-                        if let lastMessage = messages.last {
-                            scrollProxy.scrollTo(lastMessage, anchor: .bottom)
+                        fetchMessages {
+                            scrollToBottom(using: scrollProxy)
                         }
-                        markMessagesAsRead()
+                    }
+                    .onChange(of: messages) { _ in
+                        scrollToBottom(using: scrollProxy)
                     }
                 }
 
@@ -99,7 +93,17 @@ struct ConversationView: View {
         }
     }
 
-    private func fetchMessages() {
+    private func scrollToBottom(using scrollProxy: ScrollViewProxy) {
+        if let lastMessage = messages.last {
+            DispatchQueue.main.async {
+                withAnimation {
+                    scrollProxy.scrollTo(lastMessage, anchor: .bottom)
+                }
+            }
+        }
+    }
+
+    private func fetchMessages(completion: (() -> Void)? = nil) {
         guard let currentUser = fetchCurrentUser() else {
             print("Error: No logged-in user.")
             return
@@ -117,6 +121,7 @@ struct ConversationView: View {
         do {
             messages = try viewContext.fetch(fetchRequest)
             print("Fetched \(messages.count) messages.")
+            completion?() // Call completion handler after fetching messages
         } catch {
             print("Error fetching messages: \(error.localizedDescription)")
         }

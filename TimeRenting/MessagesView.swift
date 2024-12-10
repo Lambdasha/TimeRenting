@@ -12,8 +12,6 @@ struct MessagesView: View {
     @ObservedObject var authViewModel: AuthViewModel
 
     @FetchRequest private var messages: FetchedResults<Message>
-    @State private var selectedConversation: User? // Tracks the selected conversation
-    @State private var isConversationViewPresented = false
 
     init(authViewModel: AuthViewModel) {
         self.authViewModel = authViewModel
@@ -29,7 +27,7 @@ struct MessagesView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 if authViewModel.currentUser == nil {
                     Text("No user is logged in.")
@@ -52,11 +50,7 @@ struct MessagesView: View {
                             ForEach(sortedUsernames(from: groupedMessages), id: \.self) { username in
                                 if let firstMessage = groupedMessages[username]?.first,
                                    let otherUser = getOtherUser(from: firstMessage, currentUsername: authViewModel.currentUser?.username ?? "") {
-                                    Button(action: {
-                                        selectedConversation = otherUser
-                                        markMessagesAsRead(with: otherUser)
-                                        isConversationViewPresented = true
-                                    }) {
+                                    NavigationLink(destination: ConversationView(receiver: otherUser, authViewModel: authViewModel).environment(\.managedObjectContext, viewContext)) {
                                         HStack {
                                             VStack(alignment: .leading) {
                                                 Text(username)
@@ -77,12 +71,6 @@ struct MessagesView: View {
                             }
                         }
                     }
-                }
-            }
-            .sheet(isPresented: $isConversationViewPresented) {
-                if let user = selectedConversation {
-                    ConversationView(receiver: user, authViewModel: authViewModel)
-                        .environment(\.managedObjectContext, viewContext)
                 }
             }
         }
