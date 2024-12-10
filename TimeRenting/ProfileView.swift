@@ -16,15 +16,16 @@ struct ProfileView: View {
     @State private var isPostedServicesPresented = false
     @State private var isCancellationRequestsPresented = false
     @Environment(\.managedObjectContext) private var viewContext
-
+    
     @FetchRequest private var currentUserFetchRequest: FetchedResults<User>
     private var currentUser: User? {
         currentUserFetchRequest.first
     }
-
+    @State private var introduction: String = "" // State variable for user introduction
+    
     init(authViewModel: AuthViewModel) {
         _authViewModel = StateObject(wrappedValue: authViewModel)
-
+        
         // Set up the FetchRequest for the current user
         if let currentUserModel = authViewModel.currentUser {
             _currentUserFetchRequest = FetchRequest(
@@ -36,7 +37,7 @@ struct ProfileView: View {
             _currentUserFetchRequest = FetchRequest(entity: User.entity(), sortDescriptors: [])
         }
     }
-
+    
     var body: some View {
         NavigationView {
             VStack {
@@ -45,7 +46,7 @@ struct ProfileView: View {
                     Text("No user logged in")
                         .font(.title)
                         .padding()
-
+                    
                     Button("Sign Up") {
                         isSignUpPresented = true
                     }
@@ -53,7 +54,7 @@ struct ProfileView: View {
                     .foregroundColor(.blue)
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(10)
-
+                    
                     Button("Login") {
                         isLoginPresented = true
                     }
@@ -65,21 +66,39 @@ struct ProfileView: View {
                     // Display user profile
                     Text("Welcome, \(user.username ?? "Unknown")!")
                         .font(.largeTitle)
-
+                    
                     Text("Email: \(user.email ?? "No email provided")")
                         .padding()
-
+                    
                     // Display time credits with live updates
                     Text("Time Credits: \(user.timeCredits)")
                         .font(.headline)
                         .foregroundColor(.blue)
                         .padding()
-
-                    Button("Logout") {
-                        authViewModel.logout()
+                    
+                    // Introduction Section
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Introduction")
+                            .font(.headline)
+                        
+                        TextEditor(text: $introduction)
+                            .frame(height: 100)
+                            .padding(4)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .onAppear {
+                                // Load the introduction from the user entity
+                                introduction = user.introduction ?? "" // Assuming 'introduction' exists in User
+                            }
+                            .onChange(of: introduction) { newValue in
+                                // Save changes to the user entity
+                                user.introduction = newValue
+                                saveUserIntroduction()
+                            }
                     }
                     .padding()
-
+                    
+                    
                     Button("Post a Service") {
                         isPostServicePresented = true
                     }
@@ -87,7 +106,7 @@ struct ProfileView: View {
                     .foregroundColor(.blue)
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(10)
-
+                    
                     Button("View Your Booked Services") {
                         isBookedServicesPresented = true
                     }
@@ -95,7 +114,7 @@ struct ProfileView: View {
                     .foregroundColor(.blue)
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(10)
-
+                    
                     Button("View Your Posted Services") {
                         isPostedServicesPresented = true
                     }
@@ -103,7 +122,7 @@ struct ProfileView: View {
                     .foregroundColor(.blue)
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(10)
-
+                    
                     Button("View Cancellation Requests") {
                         isCancellationRequestsPresented = true
                     }
@@ -111,7 +130,7 @@ struct ProfileView: View {
                     .foregroundColor(.blue)
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(10)
-
+                    
                     // Add a button to navigate to ReviewsView
                     if let user = currentUser {
                         NavigationLink(destination: ReviewsView(user: user)) {
@@ -122,6 +141,11 @@ struct ProfileView: View {
                                 .cornerRadius(10)
                         }
                     }
+                    
+                    Button("Logout") {
+                        authViewModel.logout()
+                    }
+                    .padding()
                 }
             }
             .padding()
@@ -153,5 +177,16 @@ struct ProfileView: View {
                     .environment(\.managedObjectContext, viewContext)
             }
         }
+        
     }
+    
+    private func saveUserIntroduction() {
+        do {
+            try viewContext.save()
+            print("Introduction saved successfully.")
+        } catch {
+            print("Error saving introduction: \(error.localizedDescription)")
+        }
+    }
+
 }

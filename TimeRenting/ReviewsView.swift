@@ -14,30 +14,36 @@ struct ReviewsView: View {
     @State private var reviews: [Review] = []
 
     var body: some View {
-        VStack {
-            if reviews.isEmpty {
-                Text("No reviews yet.")
-                    .font(.headline)
-                    .foregroundColor(.gray)
-            } else {
-                Text("Reviews:")
-                    .font(.title2)
-                    .padding(.top)
+        ScrollView { // Add ScrollView for better layout
+            VStack(alignment: .leading, spacing: 10) { // Add spacing between items
+                if reviews.isEmpty {
+                    Text("No reviews yet.")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                        .padding(.top, 20) // Add some top padding
+                } else {
+                    Text("Reviews:")
+                        .font(.title2)
+                        .padding(.top)
 
-                ForEach(reviews, id: \.objectID) { review in
-                    VStack(alignment: .leading) {
-                        Text("From: \(review.fromUser?.username ?? "Unknown User")")
-                            .font(.headline)
-                        Text("Rating: \(review.rating) ⭐")
-                            .font(.subheadline)
-                        Text("Review: \(review.text ?? "No review text")")
-                            .font(.body)
-                            .foregroundColor(.gray)
-                        Divider()
+                    ForEach(reviews, id: \.objectID) { review in
+                        VStack(alignment: .leading, spacing: 5) { // Add spacing within each review
+                            Text("From: \(review.fromUser?.username ?? "Unknown User")")
+                                .font(.headline)
+                            Text("Rating: \(review.rating) ⭐")
+                                .font(.subheadline)
+                            Text("Review: \(review.text ?? "No review text")")
+                                .font(.body)
+                                .foregroundColor(.gray)
+                            Divider()
+                        }
+                        .padding() // Add padding to each review card
+                        .background(Color.gray.opacity(0.1)) // Optional: Add background color for better contrast
+                        .cornerRadius(8) // Optional: Rounded corners
                     }
-                    .padding(.vertical, 5)
                 }
             }
+            .padding() // Add padding around the entire content
         }
         .onAppear {
             fetchReviewsForUser()

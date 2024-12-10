@@ -51,10 +51,21 @@ struct ProfileViewForUser: View {
 
                     Text("Username: \(user.username ?? "Unknown")")
                         .font(.headline)
-
-                    Text("Email: \(user.email ?? "No email provided")")
-                        .font(.subheadline)
-                        .padding()
+                    if let introduction = user.introduction, !introduction.isEmpty {
+                                            VStack(alignment: .leading, spacing: 5) {
+                                                Text("Introduction")
+                                                    .font(.headline)
+                                                Text(introduction)
+                                                    .font(.body)
+                                                    .foregroundColor(.gray)
+                                            }
+                                            .padding(.vertical)
+                                        } else {
+                                            Text("No introduction provided.")
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                                .padding(.vertical)
+                                        }
                 }
 
                 Divider()
