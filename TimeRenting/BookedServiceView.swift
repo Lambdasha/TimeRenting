@@ -234,15 +234,30 @@ struct BookedServicesView: View {
 
     private func markAsFinished(_ booking: Booking) {
         guard let service = booking.service else { return }
+        
+        // Set the service to finished
         service.isFinished = true
+
+        // Get the provider (postedByUser relationship)
+        guard let provider = service.postedByUser else { return }
+
+        // Use the requiredTimeCredits from the service to add time credit to the provider
+        let timeCreditToAdd = service.requiredTimeCredits // This uses the value from the service attribute
+
+        // Update the provider's time credit
+        provider.timeCredits += timeCreditToAdd // Add the time credit to the provider's balance
+
+        // Save the changes to Core Data
         do {
             try viewContext.save()
-            refreshTrigger.toggle()
-            print("Service marked as finished.")
+            refreshTrigger.toggle()  // This triggers the UI refresh, as needed
+            print("Service marked as finished. Added \(timeCreditToAdd) to provider's time credit.")
         } catch {
-            print("Error marking service as finished: \(error.localizedDescription)")
+            print("Error marking service as finished and updating time credit: \(error.localizedDescription)")
         }
     }
+
+
 
     private func fetchCurrentUser() -> User? {
         guard let currentUsername = authViewModel.currentUser?.username else {
