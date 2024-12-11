@@ -42,7 +42,11 @@ struct BookingView: View {
                 }
                 
                 if let currentUser = currentUser {
-                    if bookingConfirmed {
+                    if service.postedByUser == currentUser {
+                        Text("You cannot book a service you posted.")
+                            .font(.subheadline)
+                            .foregroundColor(.red)
+                    } else if bookingConfirmed {
                         Text("Booking confirmed for \(service.serviceTitle ?? "this service")!")
                             .font(.subheadline)
                             .foregroundColor(.green)
@@ -111,7 +115,6 @@ struct BookingView: View {
             return
         }
 
-        // Fetch or create a conversation between the subscriber and provider
         let fetchRequest: NSFetchRequest<Message> = Message.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "(sender == %@ AND receiver == %@) OR (sender == %@ AND receiver == %@)",
                                              subscriber, provider, provider, subscriber)

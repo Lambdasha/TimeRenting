@@ -27,43 +27,46 @@ struct MessagesView: View {
     }
 
     var body: some View {
-            VStack {
-                if authViewModel.currentUser == nil {
-                    Text("No user is logged in.")
-                        .foregroundColor(.red)
-                        .font(.title2)
+        VStack {
+            if authViewModel.currentUser == nil {
+                Text("No user is logged in.")
+                    .foregroundColor(.red)
+                    .font(.title2)
+                    .padding()
+            } else {
+                Text("Messages")
+                    .font(.largeTitle)
+                    .padding()
+
+                if messages.isEmpty {
+                    Text("No messages yet.")
+                        .foregroundColor(.gray)
                         .padding()
                 } else {
-                    Text("Messages")
-                        .font(.largeTitle)
-                        .padding()
+                    let groupedMessages = groupMessagesByUser()
 
-                    if messages.isEmpty {
-                        Text("No messages yet.")
-                            .foregroundColor(.gray)
-                            .padding()
-                    } else {
-                        let groupedMessages = groupMessagesByUser()
-
-                        List {
-                            ForEach(sortedUsernames(from: groupedMessages), id: \.self) { username in
-                                if let firstMessage = groupedMessages[username]?.first,
-                                   let otherUser = getOtherUser(from: firstMessage, currentUsername: authViewModel.currentUser?.username ?? "") {
-                                    NavigationLink(destination: ConversationView(receiver: otherUser, authViewModel: authViewModel).environment(\.managedObjectContext, viewContext)) {
-                                        HStack {
-                                            VStack(alignment: .leading) {
-                                                Text(username)
-                                                    .font(.headline)
-                                                Text(firstMessage.content ?? "No content")
-                                                    .font(.subheadline)
-                                                    .lineLimit(1)
-                                            }
-                                            Spacer()
-                                            if !(firstMessage.isRead ?? true) && firstMessage.receiver?.username == authViewModel.currentUser?.username {
-                                                Circle()
-                                                    .fill(Color.red)
-                                                    .frame(width: 10, height: 10)
-                                            }
+                    List {
+                        ForEach(sortedUsernames(from: groupedMessages), id: \.self) { username in
+                            if let firstMessage = groupedMessages[username]?.first,
+                               let otherUser = getOtherUser(from: firstMessage, currentUsername: authViewModel.currentUser?.username ?? "") {
+                                NavigationLink(destination: ConversationView(receiver: otherUser, authViewModel: authViewModel).environment(\.managedObjectContext, viewContext)
+                                    .onAppear {
+                                        markMessagesAsRead(with: otherUser)
+                                    }
+                                ) {
+                                    HStack {
+                                        VStack(alignment: .leading) {
+                                            Text(username)
+                                                .font(.headline)
+                                            Text(firstMessage.content ?? "No content")
+                                                .font(.subheadline)
+                                                .lineLimit(1)
+                                        }
+                                        Spacer()
+                                        if !(firstMessage.isRead ?? true) && firstMessage.receiver?.username == authViewModel.currentUser?.username {
+                                            Circle()
+                                                .fill(Color.red)
+                                                .frame(width: 10, height: 10)
                                         }
                                     }
                                 }
@@ -72,6 +75,7 @@ struct MessagesView: View {
                     }
                 }
             }
+        }
     }
 
     private func groupMessagesByUser() -> [String: [Message]] {
