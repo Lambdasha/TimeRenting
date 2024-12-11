@@ -22,7 +22,6 @@ struct SearchView: View {
     }
     
     var body: some View {
-        NavigationStack {
             VStack {
                 // Filter Picker
                 Picker("Search By", selection: $searchFilter) {
@@ -31,12 +30,14 @@ struct SearchView: View {
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
-                .padding()
-                
+                .padding(.top) // Ensure consistent padding at the top
+
                 // Search Field
                 TextField("Search by \(searchFilter.rawValue)", text: $searchText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
+
+                Spacer(minLength: 10) // Add spacing before the results list
                 
                 // Search Results
                 if !searchText.isEmpty {
@@ -69,6 +70,12 @@ struct SearchView: View {
                             }
                         }
                     }
+                } else {
+                    Spacer()
+                    Text("Enter keywords to search.")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .padding()
                 }
             }
             .navigationTitle("Search")
@@ -90,31 +97,29 @@ struct SearchView: View {
                         .environment(\.managedObjectContext, viewContext)
                 }
             }
-        }
     }
         
-        // Fetch Users Based on Search Text
-        private func fetchUsers(searchText: String) -> [User] {
-            let request: NSFetchRequest<User> = User.fetchRequest()
-            request.predicate = NSPredicate(format: "username CONTAINS[cd] %@", searchText)
-            do {
-                return try viewContext.fetch(request)
-            } catch {
-                print("Error fetching users: \(error)")
-                return []
-            }
+    // Fetch Users Based on Search Text
+    private func fetchUsers(searchText: String) -> [User] {
+        let request: NSFetchRequest<User> = User.fetchRequest()
+        request.predicate = NSPredicate(format: "username CONTAINS[cd] %@", searchText)
+        do {
+            return try viewContext.fetch(request)
+        } catch {
+            print("Error fetching users: \(error)")
+            return []
         }
-        
-        // Fetch Services Based on Search Text
-        private func fetchServices(searchText: String) -> [Service] {
-            let request: NSFetchRequest<Service> = Service.fetchRequest()
-            request.predicate = NSPredicate(format: "serviceTitle CONTAINS[cd] %@ OR serviceDescription CONTAINS[cd] %@", searchText, searchText)
-            do {
-                return try viewContext.fetch(request)
-            } catch {
-                print("Error fetching services: \(error)")
-                return []
-            }
+    }
+    
+    // Fetch Services Based on Search Text
+    private func fetchServices(searchText: String) -> [Service] {
+        let request: NSFetchRequest<Service> = Service.fetchRequest()
+        request.predicate = NSPredicate(format: "serviceTitle CONTAINS[cd] %@ OR serviceDescription CONTAINS[cd] %@", searchText, searchText)
+        do {
+            return try viewContext.fetch(request)
+        } catch {
+            print("Error fetching services: \(error)")
+            return []
         }
+    }
 }
-

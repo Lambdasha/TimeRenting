@@ -20,7 +20,7 @@ struct HomeView: View {
     ) private var bookings: FetchedResults<Booking> // Fetch all bookings to check their status
 
     @State private var selectedService: Service? // Tracks the selected service for booking
-    @State private var isSearchViewPresented = false // Tracks if SearchView is shown
+    @State private var navigateToSearch = false // Tracks navigation to SearchView
     @State private var navigateToProfile = false // Tracks navigation to ProfileView
     @ObservedObject var authViewModel: AuthViewModel // Include authViewModel to access user information
 
@@ -30,9 +30,7 @@ struct HomeView: View {
                 // Add a Search Button
                 HStack {
                     Spacer()
-                    Button(action: {
-                        isSearchViewPresented = true // Show the search view
-                    }) {
+                    NavigationLink(destination: SearchView(authViewModel: authViewModel).environment(\.managedObjectContext, viewContext)) {
                         HStack {
                             Image(systemName: "magnifyingglass")
                             Text("Search")
@@ -94,10 +92,6 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Home")
-            .sheet(isPresented: $isSearchViewPresented) {
-                SearchView(authViewModel: authViewModel)
-                    .environment(\.managedObjectContext, viewContext)
-            }
             .onAppear {
                 print("Fetched services count: \(services.count)") // Debugging line
             }
