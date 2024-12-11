@@ -27,7 +27,7 @@
     </entity>
     <entity name="Service" representedClassName="Service" syncable="YES" codeGenerationType="class">
         <attribute name="isFinished" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
-        <attribute name="requiredTimeCredits" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="requiredTimeCredits" optional="YES" attributeType="Integer 32" minValueString="0" usesScalarValueType="YES"/>
         <attribute name="serviceDescription" optional="YES" attributeType="String"/>
         <attribute name="serviceLocation" optional="YES" attributeType="String"/>
         <attribute name="serviceTitle" optional="YES" attributeType="String"/>

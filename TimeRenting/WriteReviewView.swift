@@ -85,9 +85,6 @@ struct WriteReviewView: View {
         }
         .padding()
         .alert("Submit Successfully", isPresented: $showAlert) {
-            Button("View This Review") {
-                navigateToViewReviews()
-            }
             Button("OK", role: .cancel) {
                 dismiss()
             }
@@ -121,21 +118,6 @@ struct WriteReviewView: View {
         }
 
         isSubmitting = false
-    }
-
-    private func navigateToViewReviews() {
-        dismiss() // First dismiss the current WriteReviewView
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Assuming the app uses a NavigationLink setup to manage navigation
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let rootViewController = windowScene.windows.first?.rootViewController as? UINavigationController {
-                let viewReviewView = UIHostingController(
-                    rootView: ViewReviewView(service: service)
-                        .environment(\.managedObjectContext, viewContext)
-                )
-                rootViewController.pushViewController(viewReviewView, animated: true)
-            }
-        }
     }
 
     private func fetchCurrentUser() -> User? {

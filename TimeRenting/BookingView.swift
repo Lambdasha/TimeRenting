@@ -3,7 +3,7 @@
 //  TimeRenting
 //
 //  Created by Echo Targaryen on 12/4/24.
-//
+
 import SwiftUI
 import CoreData
 
@@ -14,34 +14,33 @@ struct BookingView: View {
 
     @State private var bookingConfirmed = false
     @State private var notEnoughCredits = false
-    @State private var navigateToProfile = false
     @State private var selectedProvider: User?
     @State private var currentUser: User?
 
     var body: some View {
+        NavigationStack {
             VStack(spacing: 20) {
                 Text("Book Service")
                     .font(.title)
                     .padding()
-
+                
                 Text("Service: \(service.serviceTitle ?? "Untitled Service")")
                     .font(.headline)
-
+                
                 Text("Required Time Credits: \(service.requiredTimeCredits)")
                     .font(.subheadline)
-
+                
                 // Button to navigate to Service Provider's Profile
                 if let serviceProvider = service.postedByUser {
-                    Button("View Service Provider Profile") {
-                        selectedProvider = serviceProvider
-                        navigateToProfile = true
+                    NavigationLink(destination: ProfileViewForUser(user: serviceProvider, authViewModel: authViewModel)) {
+                        Text("View Service Provider Profile")
+                            .padding()
+                            .background(Color.gray.opacity(0.2))
+                            .foregroundColor(.blue)
+                            .cornerRadius(10)
                     }
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .foregroundColor(.blue)
-                    .cornerRadius(10)
                 }
-
+                
                 if let currentUser = currentUser {
                     if bookingConfirmed {
                         Text("Booking confirmed for \(service.serviceTitle ?? "this service")!")
@@ -65,15 +64,10 @@ struct BookingView: View {
                 }
             }
             .padding()
-            .navigationDestination(isPresented: $navigateToProfile) {
-                if let provider = selectedProvider {
-                    ProfileViewForUser(user: provider, authViewModel: authViewModel)
-                        .environment(\.managedObjectContext, viewContext)
-                }
-            }
             .onAppear {
                 currentUser = fetchCoreDataUser()
             }
+        }
     }
 
     private func handleBooking(for user: User) {
@@ -154,4 +148,3 @@ struct BookingView: View {
         }
     }
 }
-

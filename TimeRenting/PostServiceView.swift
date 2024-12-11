@@ -36,7 +36,7 @@ struct PostServiceView: View {
                 .padding()
                 .textFieldStyle(RoundedBorderTextFieldStyle())
 
-            Stepper(value: $requiredTimeCredits, in: 1...100, step: 1) {
+            Stepper(value: $requiredTimeCredits, in: 0...100, step: 1) {
                 Text("Required Time Credits: \(requiredTimeCredits)")
             }
             .padding()
