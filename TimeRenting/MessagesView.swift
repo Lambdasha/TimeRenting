@@ -49,15 +49,24 @@ struct MessagesView: View {
                         ForEach(sortedUsernames(from: groupedMessages), id: \.self) { username in
                             if let firstMessage = groupedMessages[username]?.first,
                                let otherUser = getOtherUser(from: firstMessage, currentUsername: authViewModel.currentUser?.username ?? "") {
-                                NavigationLink(destination: ConversationView(receiver: otherUser, authViewModel: authViewModel).environment(\.managedObjectContext, viewContext)
+                                NavigationLink(destination: ConversationView(receiver: otherUser, authViewModel: authViewModel)
+                                    .environment(\.managedObjectContext, viewContext)
                                     .onAppear {
                                         markMessagesAsRead(with: otherUser)
                                     }
                                 ) {
                                     HStack {
                                         VStack(alignment: .leading) {
-                                            Text(username)
-                                                .font(.headline)
+                                            HStack {
+                                                Text(username)
+                                                    .font(.headline)
+                                                Spacer()
+                                                if let timestamp = firstMessage.timestamp {
+                                                    Text(formatTimestamp(timestamp))
+                                                        .font(.footnote)
+                                                        .foregroundColor(.gray)
+                                                }
+                                            }
                                             Text(firstMessage.content ?? "No content")
                                                 .font(.subheadline)
                                                 .lineLimit(1)
@@ -116,5 +125,12 @@ struct MessagesView: View {
         } catch {
             print("Error marking messages as read: \(error.localizedDescription)")
         }
+    }
+
+    private func formatTimestamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
