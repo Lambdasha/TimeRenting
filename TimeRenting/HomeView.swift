@@ -20,13 +20,12 @@ struct HomeView: View {
     ) private var bookings: FetchedResults<Booking> // Fetch all bookings to check their status
 
     @State private var selectedService: Service? // Tracks the selected service for booking
-    @State private var isBookingViewPresented = false // Tracks if BookingView is shown
     @State private var isSearchViewPresented = false // Tracks if SearchView is shown
     @State private var navigateToProfile = false // Tracks navigation to ProfileView
     @ObservedObject var authViewModel: AuthViewModel // Include authViewModel to access user information
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 // Add a Search Button
                 HStack {
@@ -80,14 +79,13 @@ struct HomeView: View {
                                         .cornerRadius(8)
                                     }
                                 } else {
-                                    Button("Book Now") {
-                                        selectedService = service // Set the selected service
-                                        isBookingViewPresented = true // Trigger BookingView presentation
+                                    NavigationLink(destination: BookingView(authViewModel: authViewModel, service: service)) {
+                                        Text("Book Now")
+                                            .padding()
+                                            .background(Color.blue)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(8)
                                     }
-                                    .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
                                 }
                             }
                         }
@@ -96,12 +94,6 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Home")
-            .sheet(isPresented: $isBookingViewPresented) {
-                if let selectedService = selectedService {
-                    BookingView(authViewModel: authViewModel, service: selectedService)
-                        .environment(\.managedObjectContext, viewContext)
-                }
-            }
             .sheet(isPresented: $isSearchViewPresented) {
                 SearchView(authViewModel: authViewModel)
                     .environment(\.managedObjectContext, viewContext)
