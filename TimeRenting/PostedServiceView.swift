@@ -42,7 +42,6 @@ struct PostedServicesView: View {
     }
 
     var body: some View {
-        NavigationStack {
             VStack {
                 // Filter Picker
                 Picker("Filter Services", selection: $selectedFilter) {
@@ -168,7 +167,6 @@ struct PostedServicesView: View {
                         .environment(\.managedObjectContext, viewContext)
                 }
             }
-        }
     }
 
     private func applyFilter(_ filter: ServiceFilter) -> [Service] {

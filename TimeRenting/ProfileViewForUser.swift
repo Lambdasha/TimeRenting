@@ -41,7 +41,6 @@ struct ProfileViewForUser: View {
     }
 
     var body: some View {
-        NavigationStack {
             VStack {
                 // User Details Section
                 VStack {
@@ -120,5 +119,4 @@ struct ProfileViewForUser: View {
                 }
             }
         }
-    }
 }

@@ -17,7 +17,6 @@ struct ConversationView: View {
     @State private var navigateToProfileView = false
 
     var body: some View {
-        NavigationStack { // Ensure we have a NavigationStack
             VStack {
                 HStack {
                     // Updated button for receiver's username
@@ -90,7 +89,6 @@ struct ConversationView: View {
             .navigationDestination(isPresented: $navigateToProfileView) {
                 ProfileViewForUser(user: receiver, authViewModel: authViewModel)
             }
-        }
     }
 
     private func scrollToBottom(using scrollProxy: ScrollViewProxy) {

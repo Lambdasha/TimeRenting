@@ -4,17 +4,15 @@
 //
 //  Created by Echo Targaryen on 9/17/24.
 //
-
-
 import SwiftUI
 import CoreData
 
-// First Page (Main Page)
 struct ContentView: View {
     @StateObject private var authViewModel = AuthViewModel() // Create authViewModel here
+    @State private var navigateToSecondPage = false // State to control navigation
 
     var body: some View {
-        NavigationView { // Main NavigationView
+        NavigationStack { // Main NavigationStack
             VStack {
                 Image(systemName: "clock")
                     .resizable()
@@ -23,15 +21,16 @@ struct ContentView: View {
                 Text("Rent your time")
                     .font(.largeTitle)
                 
-                // NavigationLink to go to the second page, passing authViewModel
-                NavigationLink(destination: SecondPage(authViewModel: authViewModel)) {
-                    Text("Get started")
-                        .foregroundColor(.blue)
-                        .padding()
-                        .cornerRadius(10)
+                // NavigationLink to SecondPage, triggered by navigateToSecondPage
+                NavigationLink(destination: SecondPage(authViewModel: authViewModel), isActive: $navigateToSecondPage) {
+                    EmptyView() // This link is programmatically activated
                 }
+                .hidden() // Hide the NavigationLink from view
             }
             .padding()
+            .onAppear {
+                navigateToSecondPage = true // Trigger navigation to SecondPage
+            }
         }
     }
 }

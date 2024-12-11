@@ -21,6 +21,8 @@ struct BookedServicesView: View {
     @State private var selectedProvider: User?
     @State private var selectedFilter: BookingFilter = .all // State for filter options
     @State private var refreshTrigger: Bool = false // Trigger for dynamic updates
+    @State private var navigateToViewReview: Bool = false // Controls navigation to ViewReviewView
+
     
     // Alert state
     @State private var showAlert = false
@@ -41,7 +43,6 @@ struct BookedServicesView: View {
     }
 
     var body: some View {
-        NavigationStack {
             VStack {
                 // Title
                 Text("Your Booked Services")
@@ -123,19 +124,37 @@ struct BookedServicesView: View {
                                             }
 
                                             if selectedFilter == .finished {
-                                                Button(action: {
-                                                    selectedService = service
-                                                    navigateToWriteReview = true
-                                                }) {
-                                                    Text("Write Review")
-                                                        .font(.subheadline)
-                                                        .padding(8)
-                                                        .background(Color.green.opacity(0.2))
-                                                        .cornerRadius(5)
-                                                        .foregroundColor(.green)
+                                                if hasReview(for: service) {
+                                                    // Display "View Review" button if a review already exists
+                                                    Button(action: {
+                                                        selectedService = service
+                                                        navigateToViewReview = true
+                                                    }) {
+                                                        Text("View Review")
+                                                            .font(.subheadline)
+                                                            .padding(8)
+                                                            .background(Color.purple.opacity(0.2))
+                                                            .cornerRadius(5)
+                                                            .foregroundColor(.purple)
+                                                    }
+                                                    .buttonStyle(BorderlessButtonStyle())
+                                                } else {
+                                                    // Display "Write Review" button if no review exists
+                                                    Button(action: {
+                                                        selectedService = service
+                                                        navigateToWriteReview = true
+                                                    }) {
+                                                        Text("Write Review")
+                                                            .font(.subheadline)
+                                                            .padding(8)
+                                                            .background(Color.green.opacity(0.2))
+                                                            .cornerRadius(5)
+                                                            .foregroundColor(.green)
+                                                    }
+                                                    .buttonStyle(BorderlessButtonStyle())
                                                 }
-                                                .buttonStyle(BorderlessButtonStyle())
                                             }
+
                                         }
                                     }
                                     .padding(.vertical, 5)
@@ -169,7 +188,12 @@ struct BookedServicesView: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
-        }
+            .navigationDestination(isPresented: $navigateToViewReview) {
+                            if let service = selectedService {
+                                ViewReviewView(service: service)
+                                    .environment(\.managedObjectContext, viewContext)
+                            }
+                        }
     }
 
     private func applyFilter(for currentUser: User) -> [Booking] {
@@ -208,6 +232,20 @@ struct BookedServicesView: View {
             print("Error requesting cancellation: \(error.localizedDescription)")
         }
     }
+    
+    private func hasReview(for service: Service) -> Bool {
+        let fetchRequest: NSFetchRequest<Review> = Review.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "service == %@", service)
+        
+        do {
+            let reviews = try viewContext.fetch(fetchRequest)
+            return !reviews.isEmpty // Return true if at least one review exists
+        } catch {
+            print("Error fetching reviews: \(error.localizedDescription)")
+            return false
+        }
+    }
+
 
     private func sendCancellationMessage(for booking: Booking) {
         guard let provider = booking.service?.postedByUser,
@@ -256,9 +294,7 @@ struct BookedServicesView: View {
             print("Error marking service as finished and updating time credit: \(error.localizedDescription)")
         }
     }
-
-
-
+    
     private func fetchCurrentUser() -> User? {
         guard let currentUsername = authViewModel.currentUser?.username else {
             print("Error: No logged-in user.")

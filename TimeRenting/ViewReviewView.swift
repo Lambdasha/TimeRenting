@@ -4,65 +4,64 @@
 //
 //  Created by Echo Targaryen on 12/9/24.
 //
+
 import SwiftUI
 import CoreData
 
 struct ViewReviewView: View {
     let service: Service
     @Environment(\.managedObjectContext) private var viewContext
-    @State private var reviews: [Review] = []
+    @State private var review: Review? // Single review state
 
     var body: some View {
-        VStack {
-            Text("Reviews for \(service.serviceTitle ?? "Untitled Service")")
-                .font(.largeTitle)
-                .padding()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Review for \(service.serviceTitle ?? "Untitled Service")")
+                    .font(.title)
+                    .padding(.bottom, 20)
 
-            if reviews.isEmpty {
-                Text("No reviews available.")
-                    .foregroundColor(.gray)
-                    .font(.subheadline)
-            } else {
-                List(reviews.filter { !($0.text?.isEmpty ?? true) }, id: \.self) { review in
-                    VStack(alignment: .leading, spacing: 5) {
-                        if let reviewer = review.fromUser {
-                            Text("Reviewer: \(reviewer.username ?? "Unknown")")
-                                .font(.headline)
+                if let review = review {
+                    VStack(alignment: .leading, spacing: 5) { // Add spacing within the review
+                        Text("From: \(review.fromUser?.username ?? "Unknown User")")
+                            .font(.headline)
+                        Text("Rating: \(review.rating) ⭐")
+                            .font(.subheadline)
+                        if let reviewText = review.text, !reviewText.isEmpty {
+                            Text("Review: \(reviewText)")
+                                .font(.body)
+                                .foregroundColor(.gray)
                         } else {
-                            Text("Reviewer: Unknown")
-                                .font(.headline)
+                            Text("No written review provided.")
+                                .font(.body)
                                 .foregroundColor(.gray)
                         }
-
-                        if let reviewText = review.text, !reviewText.isEmpty {
-                            Text(reviewText)
-                                .font(.subheadline)
-                        }
-
-                        Text("Rating: \(review.rating)/5")
-                            .font(.footnote)
-                            .foregroundColor(.blue)
+                        Divider()
                     }
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                    .padding() // Add padding to the review card
+                    
+                    .background(Color.gray.opacity(0.1)) // Optional: Add background color for better contrast
+                    .cornerRadius(8) // Optional: Rounded corners
+                } else {
+                    Text("No review available for this service.")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                        .padding(.top, 20)
                 }
             }
+            .padding()
         }
-        .onAppear(perform: fetchReviews)
-        .padding()
+        .onAppear(perform: fetchReview)
     }
 
-    private func fetchReviews() {
+    private func fetchReview() {
         let fetchRequest: NSFetchRequest<Review> = Review.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "service == %@", service)
 
         do {
-            let allReviews = try viewContext.fetch(fetchRequest)
-            // Filter out reviews with no content
-            reviews = allReviews.filter { !($0.text?.isEmpty ?? true) }
+            // Fetch the first review associated with the service
+            review = try viewContext.fetch(fetchRequest).first
         } catch {
-            print("Error fetching reviews: \(error.localizedDescription)")
+            print("Error fetching review: \(error.localizedDescription)")
         }
     }
 }

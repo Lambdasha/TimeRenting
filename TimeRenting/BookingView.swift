@@ -19,7 +19,6 @@ struct BookingView: View {
     @State private var currentUser: User?
 
     var body: some View {
-        NavigationStack {
             VStack(spacing: 20) {
                 Text("Book Service")
                     .font(.title)
@@ -75,7 +74,6 @@ struct BookingView: View {
             .onAppear {
                 currentUser = fetchCoreDataUser()
             }
-        }
     }
 
     private func handleBooking(for user: User) {

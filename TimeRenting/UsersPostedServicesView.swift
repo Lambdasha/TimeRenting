@@ -28,7 +28,6 @@ struct UsersPostedServicesView: View {
     }
 
     var body: some View {
-        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     if postedServices.isEmpty {
@@ -48,7 +47,6 @@ struct UsersPostedServicesView: View {
                 .padding()
             }
             .navigationTitle("\(user.username ?? "User")'s Posted Services")
-        }
     }
 }
 

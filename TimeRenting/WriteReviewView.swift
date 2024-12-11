@@ -4,7 +4,6 @@
 //
 //  Created by Echo Targaryen on 12/9/24.
 //
-
 import SwiftUI
 import CoreData
 
@@ -15,8 +14,10 @@ struct WriteReviewView: View {
     let service: Service
 
     @State private var reviewContent: String = ""
+    @State private var rating: Int = 0 // State to track the rating
     @State private var isSubmitting: Bool = false
     @State private var submissionError: String?
+    @State private var showAlert: Bool = false // Correct state for alert
 
     var body: some View {
         VStack {
@@ -24,8 +25,34 @@ struct WriteReviewView: View {
                 .font(.largeTitle)
                 .padding()
 
-            TextField("Enter your review here", text: $reviewContent)
+            Text("For Service: \(service.serviceTitle ?? "Untitled Service")")
+                .font(.headline)
+                .foregroundColor(.gray)
+                .padding(.bottom)
+
+            // Rating Section
+            VStack {
+                Text("Rate this service:")
+                    .font(.headline)
+                HStack {
+                    ForEach(1...5, id: \.self) { star in
+                        Image(systemName: star <= rating ? "star.fill" : "star")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 30, height: 30)
+                            .foregroundColor(star <= rating ? .yellow : .gray)
+                            .onTapGesture {
+                                rating = star
+                            }
+                    }
+                }
+                .padding(.vertical)
+            }
+
+            // Review Content Section
+            TextField("Enter your review here", text: $reviewContent, axis: .vertical)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                .frame(height: 100)
                 .padding()
 
             if let error = submissionError {
@@ -36,6 +63,7 @@ struct WriteReviewView: View {
 
             Spacer()
 
+            // Submit Button
             Button(action: submitReview) {
                 if isSubmitting {
                     ProgressView()
@@ -46,16 +74,24 @@ struct WriteReviewView: View {
                         .font(.title)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(Color.blue)
+                        .background(rating > 0 && !reviewContent.isEmpty ? Color.blue : Color.gray)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
             }
-            .disabled(isSubmitting || reviewContent.isEmpty)
+            .disabled(isSubmitting || rating == 0 || reviewContent.isEmpty)
 
             Spacer()
         }
         .padding()
+        .alert("Submit Successfully", isPresented: $showAlert) {
+            Button("View This Review") {
+                navigateToViewReviews()
+            }
+            Button("OK", role: .cancel) {
+                dismiss()
+            }
+        }
     }
 
     private func submitReview() {
@@ -68,7 +104,8 @@ struct WriteReviewView: View {
         submissionError = nil
 
         let newReview = Review(context: viewContext)
-        newReview.text = reviewContent // Ensure Core Data has a `content` field for the review
+        newReview.text = reviewContent // Review text
+        newReview.rating = Int16(rating) // Rating as Int16
         newReview.fromUser = fromUser
         newReview.toUser = toUser
         newReview.service = service // Associate the review with the service
@@ -77,13 +114,28 @@ struct WriteReviewView: View {
         do {
             try viewContext.save()
             print("Review submitted successfully.")
-            dismiss() // Automatically go back to the previous page
+            showAlert = true // Show alert for successful submission
         } catch {
             submissionError = "Failed to submit review. Please try again."
             print("Error submitting review: \(error.localizedDescription)")
         }
 
         isSubmitting = false
+    }
+
+    private func navigateToViewReviews() {
+        dismiss() // First dismiss the current WriteReviewView
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Assuming the app uses a NavigationLink setup to manage navigation
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootViewController = windowScene.windows.first?.rootViewController as? UINavigationController {
+                let viewReviewView = UIHostingController(
+                    rootView: ViewReviewView(service: service)
+                        .environment(\.managedObjectContext, viewContext)
+                )
+                rootViewController.pushViewController(viewReviewView, animated: true)
+            }
+        }
     }
 
     private func fetchCurrentUser() -> User? {

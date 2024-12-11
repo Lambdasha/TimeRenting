@@ -22,7 +22,6 @@ struct SearchView: View {
     }
 
     var body: some View {
-        NavigationStack {
             VStack {
                 // Filter Picker
                 Picker("Search By", selection: $searchFilter) {
@@ -90,7 +89,6 @@ struct SearchView: View {
                         .environment(\.managedObjectContext, viewContext)
                 }
             }
-        }
     }
 
     // Fetch Users Based on Search Text

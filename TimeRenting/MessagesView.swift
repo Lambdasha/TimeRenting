@@ -27,7 +27,6 @@ struct MessagesView: View {
     }
 
     var body: some View {
-        NavigationStack {
             VStack {
                 if authViewModel.currentUser == nil {
                     Text("No user is logged in.")
@@ -73,7 +72,6 @@ struct MessagesView: View {
                     }
                 }
             }
-        }
     }
 
     private func groupMessagesByUser() -> [String: [Message]] {

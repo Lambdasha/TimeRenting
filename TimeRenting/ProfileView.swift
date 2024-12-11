@@ -37,7 +37,6 @@ struct ProfileView: View {
     }
 
     var body: some View {
-        NavigationStack {
             VStack {
                 if authViewModel.currentUser == nil || currentUser == nil {
                     // No user logged in
@@ -154,7 +153,6 @@ struct ProfileView: View {
             .sheet(isPresented: $isSignUpPresented) {
                 SignUpView(authViewModel: authViewModel, isPresented: $isSignUpPresented)
             }
-        }
     }
 
     private func saveUserIntroduction() {
